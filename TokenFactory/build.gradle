@@ -1,0 +1,74 @@
+group 'io.tokenfactory.score'
+version '0.1'
+// for integration tests
+sourceSets {
+    intTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+        java {
+            srcDirs("src/intTest")
+        }
+    }
+}
+
+// for integration tests
+configurations {
+    intTestImplementation.extendsFrom testImplementation
+    intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+    intTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+
+dependencies {
+
+    compileOnly 'foundation.icon:javaee-score-data:0.9.0'
+    implementation 'foundation.icon:javaee-scorex:0.5.2'
+    implementation 'com.github.sink772:javaee-tokens:0.6.2'
+    implementation 'com.github.sink772:minimal-json:0.9.7'
+
+    intTestAnnotationProcessor 'foundation.icon:javaee-score-client:0.9.0'
+    intTestImplementation 'foundation.icon:javaee-score-client:0.9.0'
+    intTestImplementation 'org.bouncycastle:bcprov-jdk15on:1.60'
+
+
+}
+
+optimizedJar {
+    mainClassName = 'io.tokenfactory.score.TokenFactory'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+deployJar {
+    endpoints {
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+        }
+        mainnet {
+            uri = 'https://ctz.solidwallet.io/api/v3'
+            nid = 0x1
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            to = 'cxae8b99836b7dcb98b44ba9837685b29cb9d44eba'
+            nid = 0x7
+        }
+    }
+
+    keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
+    password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {
+        arg('admin', 'hx427c4518255123b5e5b3b4744a684ae824970541')
+        arg('treasury', 'hx427c4518255123b5e5b3b4744a684ae824970541')
+        arg('deployFee', '0x8AC7230489E80000')
+    }
+
+
+}
+
+test {
+    useJUnitPlatform()
+}
