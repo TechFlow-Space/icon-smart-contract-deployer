@@ -87,6 +87,7 @@ public class TokenFactory {
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
         byte[] content = this.content.get(key);
         Address contract = deployContract(key, content, _data);
+        call(CHAIN_ADDRESS, "setScoreOwner",contract, deployer);
 
         ContractDB contractDB = new ContractDB(currentSize, key, deployer, BigInteger.valueOf(getBlockTimestamp()), contract);
         this.deploymentDetail.set(currentSize, contractDB);
