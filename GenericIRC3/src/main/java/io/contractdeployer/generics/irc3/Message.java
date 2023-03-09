@@ -1,8 +1,8 @@
 package io.contractdeployer.generics.irc3;
 
-import static io.contractdeployer.generics.irc3.Constant.*;
+import static io.contractdeployer.generics.irc3.Constant.TAG;
 
-public class Message {
+public class  Message {
 
     public static class Found{
 
@@ -13,6 +13,16 @@ public class Message {
 
         public static String token() {
             return TAG + " :: "+" Token already exists.";
+
+        }
+
+        public static String negative(String value) {
+            return TAG + " :: "+ value+" cannot be negative.";
+
+        }
+
+        public static String zeroNeg(String value) {
+            return TAG + " :: "+ value+" cannot be zero or negative.";
 
         }
     }
@@ -37,6 +47,14 @@ public class Message {
 
     }
 
+    public static class Exceeded{
+
+        public static String cap() {
+            return TAG+" :: Cap Exceeded.";
+        }
+
+    }
+
     public static String noToken() {
         return TAG+" :: "+" Non-existent token.";
     }
@@ -47,6 +65,14 @@ public class Message {
 
     public static String noOwnerTokens() {
         return TAG+" :: "+" No tokens exist for the owner.";
+    }
+
+    public static String empty(String type) {
+        return TAG+" :: "+type+" is null or empty.";
+    }
+
+    public static String priceMismatch() {
+        return TAG+" :: "+" Price Mismatch.";
     }
 
 

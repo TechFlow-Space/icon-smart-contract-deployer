@@ -9,4 +9,8 @@ public class Constant {
     static final String TOKEN_OWNERS="owners";
     static final String APPROVALS="approvals";
     static final String ADMIN="admin";
+    static final String MINT_COST="mint_cost";
+    static final String CAP="cap";
+    static final String TOKEN_URI="token_uri";
+    static final String TOKEN_ID="token_id";
 }

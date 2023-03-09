@@ -11,14 +11,16 @@ import org.junit.jupiter.api.function.Executable;
 import java.math.BigInteger;
 
 import static io.contractdeployer.generics.irc3.TestHelper.expectErrorMessage;
-import static io.contractdeployer.generics.irc3.Vars.ZERO_ADDRESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 public class IRC3Test extends TestBase {
 
     private static final String name="IRC3";
     private static final String symbol="irc3";
+    private static final BigInteger cap=BigInteger.valueOf(5);
+    private static final BigInteger mintCost=BigInteger.valueOf(1);
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private static final Account user = sm.createAccount();
@@ -28,7 +30,7 @@ public class IRC3Test extends TestBase {
 
     @BeforeAll
     public static void setup() throws Exception {
-        ircScore = sm.deploy(owner, IRC3.class,name,symbol);
+        ircScore = sm.deploy(owner, IRC3.class,name,symbol,cap,mintCost);
         ircScore.invoke(owner,"setAdmin", admin.getAddress());
         // setup spy object against the ircScore object
         tokenSpy = (IRC3) spy(ircScore.getInstance());
@@ -45,25 +47,47 @@ public class IRC3Test extends TestBase {
     }
 
     @Test
-    void mint(){
-        Executable call = () -> ircScore.invoke(user,"mint", user.getAddress(),BigInteger.valueOf(1));
+    void setMintCost(){
+        Executable call = () -> ircScore.invoke(user,"setMintCost", BigInteger.valueOf(2));
         expectErrorMessage(call, Message.Not.admin());
 
-        call = () -> ircScore.invoke(admin,"mint", ZERO_ADDRESS,BigInteger.valueOf(1));
-        expectErrorMessage(call, Message.Found.zeroAddr("to"));
+        ircScore.invoke(admin,"setMintCost", BigInteger.valueOf(2));
+        assertEquals(ircScore.call("getMintCost"),BigInteger.valueOf(2));
+    }
 
-        ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1));
-        call = () -> ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1));
-        expectErrorMessage(call, Message.Found.token());
+    @Test
+    void getCap(){
+        assertEquals(ircScore.call("getCap"),cap);
+    }
 
-        ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(2));
-        assertEquals(ircScore.call("balanceOf",user.getAddress()),2);
+    @Test
+    void getTokenId(){
+        assertEquals(ircScore.call("getTokenId"),BigInteger.valueOf(0));
+    }
+
+    @Test
+    void mint(){
+        doReturn(BigInteger.valueOf(5)).when(tokenSpy).getPaidValue();
+        Executable call = () -> ircScore.invoke(user,"mint","uri");
+        expectErrorMessage(call, Message.priceMismatch());
+
+        doReturn(BigInteger.valueOf(1)).when(tokenSpy).getPaidValue();
+        for(int i=0;i<5;i++){
+            ircScore.invoke(user,"mint","uri");
+        }
+
+        call = () -> ircScore.invoke(user,"mint","uri");
+        expectErrorMessage(call, Message.Exceeded.cap());
+
+        assertEquals(ircScore.call("balanceOf",user.getAddress()),5);
+        assertEquals(ircScore.call("getTokenUri",BigInteger.valueOf(1)),"uri");
     }
 
     @Test
     void burn(){
-        ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1));
-        ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(2));
+        doReturn(BigInteger.valueOf(1)).when(tokenSpy).getPaidValue();
+        ircScore.invoke(user,"mint", "uri1");
+        ircScore.invoke(user,"mint", "uri2");
 
         Executable call = () -> ircScore.invoke(admin,"burn", BigInteger.valueOf(1));
         expectErrorMessage(call, Message.Not.operatorApproved());

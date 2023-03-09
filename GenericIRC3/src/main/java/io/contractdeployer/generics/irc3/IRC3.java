@@ -1,23 +1,39 @@
 package io.contractdeployer.generics.irc3;
 
-import static io.contractdeployer.generics.irc3.Vars.*;
 import com.iconloop.score.util.IntSet;
 import score.Address;
 import score.Context;
-
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Payable;
 
 import java.math.BigInteger;
 
+import static io.contractdeployer.generics.irc3.Vars.*;
+
 public class IRC3 implements InterfaceIRC3 {
 
-    public IRC3(String _name, String _symbol) {
-        // initialize values only at first deployment
+    public IRC3(String _name, String _symbol,BigInteger _cap,BigInteger _mintCost) {
+
         if (name.get() == null) {
+            name.set(ensureNotEmpty(_name));
+            symbol.set(ensureNotEmpty(_symbol));
+
+            Context.require(_mintCost.compareTo(BigInteger.ZERO)>=0,Message.Found.negative("_mintCost"));
+            Context.require(_cap.compareTo(BigInteger.ZERO)>0,Message.Found.zeroNeg("_cap"));
+
             name.set(_name);
             symbol.set(_symbol);
+            tokenId.set(BigInteger.ZERO);
+            cap.set(_cap);
+            mintCost.set(_mintCost);
         }
+    }
+
+    private String ensureNotEmpty(String str) {
+        Context.require(str != null && !str.trim().isEmpty(), Message.empty("String"));
+        assert str != null;
+        return str.trim();
     }
 
     @External(readonly=true)
@@ -28,6 +44,31 @@ public class IRC3 implements InterfaceIRC3 {
     @External(readonly=true)
     public String symbol() {
         return symbol.get();
+    }
+
+    @External(readonly=true)
+    public BigInteger getMintCost() {
+        return mintCost.get();
+    }
+
+    @External(readonly=true)
+    public BigInteger getTokenId() {
+        return tokenId.get();
+    }
+
+    @External(readonly=true)
+    public String getTokenUri(BigInteger _tokenId) {
+        return tokenURIs.get(_tokenId);
+    }
+    @External(readonly=true)
+    public void setMintCost(BigInteger _mintCost) {
+        this.adminRequired();
+        mintCost.set(_mintCost);
+    }
+
+    @External(readonly = true)
+    public BigInteger getCap(){
+        return cap.get();
     }
 
     @External(readonly = true)
@@ -89,7 +130,7 @@ public class IRC3 implements InterfaceIRC3 {
     private void _transfer(Address from, Address to, BigInteger tokenId) {
         Context.require(ownerOf(tokenId).equals(from), Message.Not.tokenOwner());
         Context.require(!to.equals(ZERO_ADDRESS), Message.Found.zeroAddr("to"));
-        // clear approvals from the previous owner
+
         _approve(ZERO_ADDRESS, tokenId);
 
         _removeTokenFrom(tokenId, from);
@@ -98,27 +139,16 @@ public class IRC3 implements InterfaceIRC3 {
         Transfer(from, to, tokenId);
     }
 
-    /**
-     * (Extension) Returns the total amount of tokens stored by the contract.
-     */
     @External(readonly=true)
     public int totalSupply() {
         return tokenOwners.length();
     }
 
-    /**
-     * (Extension) Returns a token ID at a given index of all the tokens stored by the contract.
-     * Use along with {@code _totalSupply} to enumerate all tokens.
-     */
     @External(readonly=true)
     public BigInteger tokenByIndex(int _index) {
         return tokenOwners.getKey(_index);
     }
 
-    /**
-     * (Extension) Returns a token ID owned by owner at a given index of its token list.
-     * Use along with {@code balanceOf} to enumerate all of owner's tokens.
-     */
     @External(readonly=true)
     public BigInteger tokenOfOwnerByIndex(Address _owner, int _index) {
         var tokens = holderTokens.get(_owner);
@@ -126,9 +156,14 @@ public class IRC3 implements InterfaceIRC3 {
     }
 
     @External
-    public void mint(Address _to,BigInteger _tokenId){
-        this.adminRequired();
-        _mint(_to,_tokenId);
+    @Payable
+    public void mint(String _uri){
+        Context.require(getPaidValue().equals(getMintCost()),Message.priceMismatch());
+        Context.require(BigInteger.valueOf(totalSupply()+1).compareTo(getCap())<=0,Message.Exceeded.cap());
+        Address caller=Context.getCaller();
+        tokenId.set(getTokenId().add(BigInteger.ONE));
+        tokenURIs.set(getTokenId(),_uri);
+        _mint(caller,getTokenId());
     }
 
     @External
@@ -140,9 +175,6 @@ public class IRC3 implements InterfaceIRC3 {
         _burn(_tokenId);
     }
 
-    /**
-     * Mints `tokenId` and transfers it to `to`.
-     */
     protected void _mint(Address to, BigInteger tokenId) {
         Context.require(!ZERO_ADDRESS.equals(to), Message.Found.zeroAddr("to"));
         Context.require(!_tokenExists(tokenId), Message.Found.token());
@@ -152,12 +184,8 @@ public class IRC3 implements InterfaceIRC3 {
         Transfer(ZERO_ADDRESS, to, tokenId);
     }
 
-    /**
-     * Destroys `tokenId`.
-     */
     protected void _burn(BigInteger tokenId) {
         Address owner = ownerOf(tokenId);
-        // clear approvals
         _approve(ZERO_ADDRESS, tokenId);
 
         _removeTokenFrom(tokenId, owner);
@@ -185,6 +213,10 @@ public class IRC3 implements InterfaceIRC3 {
         if (tokens.length() == 0) {
             holderTokens.set(from, null);
         }
+    }
+
+    protected BigInteger getPaidValue(){
+        return Context.getValue();
     }
 
     private void ownerRequired() {
