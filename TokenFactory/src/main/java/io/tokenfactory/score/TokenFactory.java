@@ -101,7 +101,13 @@ public class TokenFactory {
             case "IRC2":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(), data.get("decimal").asInt());
             case "IRC3":
-                return deploy(content, data.get("param1"));
+                return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
+                        new BigInteger(data.get("cap").asString()),new BigInteger(data.get("mintCost").asString()));
+            case "IRC31":
+                return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
+                        new BigInteger(data.get("cap").asString()),new BigInteger(data.get("maxBatchMintCount").asString()));
+            case "MARKETPLACE":
+                return deploy(content);
             default:
                 throw new UserRevertedException("Invalid Key");
         }
