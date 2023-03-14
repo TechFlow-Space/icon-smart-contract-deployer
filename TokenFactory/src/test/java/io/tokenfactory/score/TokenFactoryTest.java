@@ -112,7 +112,7 @@ public class TokenFactoryTest extends TestBase{
 
         doReturn(contract.getAddress()).when(spyScore).deployContract("IRC2","content".getBytes(),irc2_data);
 
-        doNothing().when(spyScore).contextCall(contract.getAddress(),user.getAddress());
+        doNothing().when(spyScore).setScoreOwner(contract.getAddress(),user.getAddress());
 
         score.invoke(user,"deployContract", "IRC2",user.getAddress(),irc2_data);
 

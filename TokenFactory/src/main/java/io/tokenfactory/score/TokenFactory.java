@@ -87,8 +87,7 @@ public class TokenFactory {
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
         byte[] content = this.content.get(key);
         Address contract = deployContract(key, content, _data);
-        contextCall(contract, deployer);
-//        call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
+        setScoreOwner(contract, deployer);
 
         ContractDB contractDB = new ContractDB(currentSize, key, deployer, BigInteger.valueOf(getBlockTimestamp()), contract);
         this.deploymentDetail.set(currentSize, contractDB);
@@ -154,7 +153,7 @@ public class TokenFactory {
         return Context.getValue();
     }
 
-    protected void contextCall(Address contract, Address deployer){
+    protected void setScoreOwner(Address contract, Address deployer){
         call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
     }
 
