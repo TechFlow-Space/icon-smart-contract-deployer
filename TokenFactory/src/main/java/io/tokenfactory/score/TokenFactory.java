@@ -99,7 +99,7 @@ public class TokenFactory {
         JsonObject data = unpackAndFetchObject(_data);
         switch (key) {
             case "IRC2":
-                return deploy(content, data.get("name").asString(), data.get("symbol").asString(), data.get("decimal").asInt());
+                return deploy(content, data.get("name").asString(), data.get("symbol").asString(), new BigInteger(data.get("decimal").asString()));
             case "IRC3":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
                         new BigInteger(data.get("cap").asString()),new BigInteger(data.get("mintCost").asString()));

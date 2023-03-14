@@ -53,7 +53,8 @@ deployJar {
         }
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
-            to = 'cxae8b99836b7dcb98b44ba9837685b29cb9d44eba'
+//            to = 'cxae8b99836b7dcb98b44ba9837685b29cb9d44eba'
+            to='cxde46bd0c4f41053ff8b58d909f2d8ddceba4eb13'
             nid = 0x7
         }
     }
