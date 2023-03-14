@@ -87,7 +87,7 @@ public class TokenFactory {
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
         byte[] content = this.content.get(key);
         Address contract = deployContract(key, content, _data);
-        call(CHAIN_ADDRESS, "setScoreOwner",contract, deployer);
+        call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
 
         ContractDB contractDB = new ContractDB(currentSize, key, deployer, BigInteger.valueOf(getBlockTimestamp()), contract);
         this.deploymentDetail.set(currentSize, contractDB);
@@ -102,10 +102,10 @@ public class TokenFactory {
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(), new BigInteger(data.get("decimal").asString()));
             case "IRC3":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
-                        new BigInteger(data.get("cap").asString()),new BigInteger(data.get("mintCost").asString()));
+                        new BigInteger(data.get("cap").asString()), new BigInteger(data.get("mintCost").asString()));
             case "IRC31":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
-                        new BigInteger(data.get("cap").asString()),new BigInteger(data.get("maxBatchMintCount").asString()));
+                        new BigInteger(data.get("cap").asString()), new BigInteger(data.get("maxBatchMintCount").asString()));
             case "MARKETPLACE":
                 return deploy(content);
             default:
@@ -120,8 +120,22 @@ public class TokenFactory {
 
 
     @External(readonly = true)
-    public ContractDB getDeployedContracts(Address deployer) {
-        return this.deployerDetail.at(deployer).get(0);
+    public ContractDB[] getDeployedContracts(Address deployer, int offset, int limit, String order) {
+        int deployedCount = this.deployerDetail.at(deployer).size();
+        ArrayDB<ContractDB> deployerDetail = this.deployerDetail.at(deployer);
+        int maxCount = Math.min(offset + limit, deployedCount);
+        ContractDB[] deployedContracts = new ContractDB[maxCount - offset];
+
+        if (order.equals("desc")) {
+            for (int i = maxCount - 1, j = 0; i >= offset; i--, j++) {
+                deployedContracts[j] = deployerDetail.get(i);
+            }
+        } else {
+            for (int i = offset, j = 0; i < maxCount; i++, j++) {
+                deployedContracts[j] = deployerDetail.get(i);
+            }
+        }
+        return deployedContracts;
     }
 
     @External(readonly = true)
