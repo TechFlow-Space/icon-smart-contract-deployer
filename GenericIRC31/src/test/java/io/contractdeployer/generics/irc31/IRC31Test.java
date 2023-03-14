@@ -5,6 +5,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -28,8 +29,8 @@ public class IRC31Test extends TestBase {
     private static Score ircScore;
     private static IRC31 tokenSpy;
 
-    @BeforeAll
-    public static void setup() throws Exception {
+    @BeforeEach
+    public void setup() throws Exception {
         ircScore = sm.deploy(owner, IRC31.class,name,symbol,cap,maxBatchMintCount);
         ircScore.invoke(owner,"setAdmin", admin.getAddress());
         // setup spy object against the ircScore object

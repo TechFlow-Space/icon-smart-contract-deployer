@@ -33,7 +33,7 @@ public class GenericMarketplaceTest extends TestBase {
     private static Score newScore;
 
     @BeforeEach
-    void setup() throws Exception {
+    public void setup() throws Exception {
         gkScore = sm.deploy(owner, DummyScore.class);
         newScore = sm.deploy(owner, DummyScore.class);
         score = sm.deploy(owner, GenericMarketPlace.class);

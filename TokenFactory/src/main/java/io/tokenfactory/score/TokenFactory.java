@@ -81,13 +81,14 @@ public class TokenFactory {
     @Payable
     public void deployContract(String key, Address deployer, byte[] _data) {
         require(!deployer.equals(ZERO_ADDRESS), Message.zeroAddress());
-        require(getValue().equals(this.getDeployFee()), Message.paymentMismatch());
+        require(getPaidValue().equals(this.getDeployFee()), Message.paymentMismatch());
         require(this.content.keys().contains(key), Message.Not.deployed());
 
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
         byte[] content = this.content.get(key);
         Address contract = deployContract(key, content, _data);
-        call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
+        contextCall(contract, deployer);
+//        call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
 
         ContractDB contractDB = new ContractDB(currentSize, key, deployer, BigInteger.valueOf(getBlockTimestamp()), contract);
         this.deploymentDetail.set(currentSize, contractDB);
@@ -147,6 +148,14 @@ public class TokenFactory {
     public void transferToTreasury(BigInteger amount) {
         this.ownerOnly();
         transfer(getTreasury(), amount);
+    }
+
+    protected BigInteger getPaidValue(){
+        return Context.getValue();
+    }
+
+    protected void contextCall(Address contract, Address deployer){
+        call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
     }
 
     @EventLog(indexed = 2)

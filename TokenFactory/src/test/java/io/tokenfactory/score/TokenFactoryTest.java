@@ -7,6 +7,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
@@ -15,9 +16,7 @@ import java.math.BigInteger;
 
 import static io.tokenfactory.score.TestHelper.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.spy;
-import static score.Context.newVarDB;
-
+import static org.mockito.Mockito.*;
 
 public class TokenFactoryTest extends TestBase{
 
@@ -27,12 +26,13 @@ public class TokenFactoryTest extends TestBase{
     private static final Account owner = sm.createAccount();
     private static final Account admin = sm.createAccount();
     private static final Account user = sm.createAccount();
+    private static final Account contract = sm.createAccount();
     private static final Account treasury = sm.createAccount();
     private static Score score;
     private static TokenFactory spyScore;
 
-    @BeforeAll
-    public static void setup() throws Exception {
+    @BeforeEach
+    public void setup() throws Exception {
         score = sm.deploy(owner, TokenFactory.class,
                 admin.getAddress(), treasury.getAddress(), deployFee);
         // setup spy object against the score object
@@ -85,21 +85,39 @@ public class TokenFactoryTest extends TestBase{
         assertEquals(score.call("getDeployFee"),deployFee);
     }
 
-//    @Test
-//    void deployContract(){
-//
-//        JsonObject data = Json.object().add("name", "MyIRC2").add(
-//                "symbol", "IRC2").add("decimal","18");
-//        byte[] irc2_data=data.toString().getBytes();
-//
-//        Executable call = () -> score.invoke(user,"deployContract", "IRC2",ZERO_ADDRESS,irc2_data);
-//        expectErrorMessage(call, Message.zeroAddress());
-//
-//        call = () -> score.invoke(user,"deployContract", "IRC2",user.getAddress(),irc2_data);
-//        expectErrorMessage(call, Message.Not.deployed());
-//
-//    }
+    @Test
+    void deployContract(){
+
+        JsonObject data = Json.object().add("name", "MyIRC2").add(
+                "symbol", "IRC2").add("decimal","18");
+        byte[] irc2_data=data.toString().getBytes();
+
+        doReturn(deployFee).when(spyScore).getPaidValue();
+
+        Executable call = () -> score.invoke(user,"deployContract", "IRC2",ZERO_ADDRESS,irc2_data);
+        expectErrorMessage(call, Message.zeroAddress());
+
+        doReturn(BigInteger.valueOf(5)).when(spyScore).getPaidValue();
+
+        call = () -> score.invoke(user,"deployContract", "IRC2",user.getAddress(),irc2_data);
+        expectErrorMessage(call, Message.paymentMismatch());
+
+        doReturn(deployFee).when(spyScore).getPaidValue();
+
+        call = () -> score.invoke(user,"deployContract", "IRC2",user.getAddress(),irc2_data);
+        expectErrorMessage(call, Message.Not.deployed());
+
+        score.invoke(admin,"setContractContent", "IRC2","content".getBytes());
+
+        doReturn(contract.getAddress()).when(spyScore).deployContract("IRC2","content".getBytes(),irc2_data);
+
+        doNothing().when(spyScore).contextCall(contract.getAddress(),user.getAddress());
+
+        score.invoke(user,"deployContract", "IRC2",user.getAddress(),irc2_data);
+
+        assertEquals(score.call("deployCount"),1);
 
 
+    }
 
 }
