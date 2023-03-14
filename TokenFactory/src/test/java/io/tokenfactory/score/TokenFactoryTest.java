@@ -6,6 +6,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+import io.tokenfactory.score.dbs.ContractDB;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,6 +117,11 @@ public class TokenFactoryTest extends TestBase{
         score.invoke(user,"deployContract", "IRC2",user.getAddress(),irc2_data);
 
         assertEquals(score.call("deployCount"),1);
+
+        ContractDB[] deployedContracts = (ContractDB[]) score.call("getDeployedContracts", user.getAddress(), 0,2, "asc");
+        assertEquals(1, deployedContracts.length);
+        assertEquals(user.getAddress(), deployedContracts[0].getDeployer());
+        assertEquals("IRC2", deployedContracts[0].getName());
 
 
     }
