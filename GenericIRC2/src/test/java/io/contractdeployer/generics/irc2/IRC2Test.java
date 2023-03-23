@@ -29,14 +29,15 @@ public class IRC2Test extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private static final Account user = sm.createAccount();
+    private static final Account minter = sm.createAccount();
     private static Score ircScore;
     private static IRC2 tokenSpy;
 
     @BeforeEach
     public void setup() throws Exception {
         ircScore = sm.deploy(owner, IRC2.class,
-                name, symbol, decimals);
-        ircScore.invoke(owner,"mint",totalSupply,owner.getAddress());
+                name, symbol, BigInteger.valueOf(decimals),minter.getAddress());
+        ircScore.invoke(minter,"mint",totalSupply,owner.getAddress());
 
         // setup spy object against the ircScore object
         tokenSpy = (IRC2) spy(ircScore.getInstance());
