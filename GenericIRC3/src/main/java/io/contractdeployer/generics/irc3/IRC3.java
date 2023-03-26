@@ -146,6 +146,7 @@ public class IRC3 implements InterfaceIRC3 {
 
     @External(readonly=true)
     public BigInteger tokenByIndex(int _index) {
+        Context.require(_index<tokenOwners.length(),"Invalid Index");
         return tokenOwners.getKey(_index);
     }
 
