@@ -102,6 +102,13 @@ public class Auction {
         AuctionCompleted(auctionId, contractAddress, nftId);
     }
 
+    @External
+    public void transferToTreasury(Address treasury, BigInteger value) {
+        require(getCaller().equals(getOwner()), "Owner Only");
+        require(value.compareTo(getBalance(getAddress())) <= 0, "Invalid Value");
+        transfer(treasury, value);
+    }
+
     void transferToContract(Address contractAddress, Address _from, BigInteger _tokenId) {
         call(contractAddress, "transferFrom", _from, getAddress(), _tokenId);
     }
