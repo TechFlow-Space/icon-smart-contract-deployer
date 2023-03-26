@@ -28,6 +28,10 @@ deployJar {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
         }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            nid = 0x2
+        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
