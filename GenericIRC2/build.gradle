@@ -38,6 +38,7 @@ deployJar {
         arg('_name','MyIRC2')
         arg('_symbol','IRC2')
         arg('_decimals','0x12')
+        arg('_minter','')
     }
 }
 

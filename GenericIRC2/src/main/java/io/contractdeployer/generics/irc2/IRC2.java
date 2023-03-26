@@ -78,9 +78,9 @@ public class IRC2 implements InterfaceIRC2 {
     }
 
     @External
-    public void mint(BigInteger _amount, Address address) {
-        Context.require(Context.getCaller().equals(minter.get()), Message.Not.minter());
-        _mint(address, _amount);
+    public void mint(Address to,BigInteger _amount) {
+        Context.require(Context.getOrigin().equals(minter.get()), Message.Not.minter());
+        _mint(to, _amount);
     }
 
     @External

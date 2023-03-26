@@ -103,7 +103,7 @@ public class IRC3 implements InterfaceIRC3 {
     public void approve(Address _to, BigInteger _tokenId) {
         Address owner = ownerOf(_tokenId);
         Context.require(!owner.equals(_to), Message.ownerApproval());
-        Context.require(owner.equals(Context.getCaller()), Message.Not.tokenOwner());
+        Context.require(owner.equals(Context.getOrigin()), Message.Not.tokenOwner());
         _approve(_to, _tokenId);
     }
 
