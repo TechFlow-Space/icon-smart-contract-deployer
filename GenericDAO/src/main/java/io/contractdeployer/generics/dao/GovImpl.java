@@ -123,9 +123,7 @@ public class GovImpl {
         Context.require(!sender.isContract(), "Only EOA can submit proposal");
         checkEndTimeOrThrow(_endTime);
 
-        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
-        var balance = tokenProxy.balanceOf(sender);
-        Context.require(minimumThreshold().compareTo(balance) <= 0, "MinimumThresholdNotMet");
+        Context.require(minimumThreshold().compareTo(getTokenBalance(sender)) <= 0, "MinimumThresholdNotMet");
 
         BigInteger pid = getNextId();
         long createTime = Context.getBlockTimestamp();
@@ -133,6 +131,11 @@ public class GovImpl {
         Proposal pl = new Proposal(sender, createTime, endTime, _ipfsHash, Proposal.STATUS_ACTIVE);
         proposals.set(pid, pl);
         ProposalSubmitted(pid, sender);
+    }
+
+    BigInteger getTokenBalance(Address sender) {
+        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
+        return  tokenProxy.balanceOf(sender);
     }
 
     @External
@@ -144,8 +147,7 @@ public class GovImpl {
         Context.require(pl != null, "InvalidProposalId");
         Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, "ProposalNotActive");
 
-        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
-        var balance = tokenProxy.balanceOf(sender);
+        BigInteger balance = getTokenBalance(sender);
         Context.require(balance.signum() > 0, "NotTokenHolder");
 
         var vote = _vote.toLowerCase();

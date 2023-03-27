@@ -8,7 +8,6 @@ import java.math.BigInteger;
 public class TokenProxy {
 
     public static final String IRC2 = "irc-2";
-    public static final String IRC3 = "irc-3";
     public static final String IRC31 = "irc-31";
 
     private final Address address;
