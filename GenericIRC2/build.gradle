@@ -8,7 +8,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'io.contractdeployer.generics.irc3.IRC3'
+    mainClassName = 'io.contractdeployer.generics.irc2.IRC2'
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
@@ -18,7 +18,7 @@ deployJar {
     endpoints {
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
-            to = 'cxa191038394e35ca363fd89a61221eebf38e37f4d'
+//            to = 'cxa191038394e35ca363fd89a61221eebf38e37f4d'
             nid = 0x7
         }
         sejong {
@@ -32,7 +32,6 @@ deployJar {
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
-            to = 'cxc06fd04d2e06e106e2cc6fa760ec9a03293bac6c'
             nid = 0x2
         }
     }
@@ -40,10 +39,9 @@ deployJar {
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
 
     parameters {
-        arg('_name','MyIRC3')
-        arg('_symbol','MyIRC3')
-        arg('_cap','0x234')
-        arg('_mintCost','0x10')
+        arg('_name','MyIRC2')
+        arg('_symbol','IRC2')
+        arg('_decimals','0x12')
     }
 }
 
