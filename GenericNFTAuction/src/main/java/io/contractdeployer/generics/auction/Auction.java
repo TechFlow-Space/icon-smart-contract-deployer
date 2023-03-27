@@ -6,8 +6,6 @@ import score.annotation.External;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
-import java.util.Map;
-import java.util.Objects;
 
 import static io.contractdeployer.generics.auction.Constant.ZERO_ADDRESS;
 import static io.contractdeployer.generics.auction.Vars.auction;
@@ -83,7 +81,7 @@ public class Auction {
 
         AuctionDB auctionDB = auction.get(currentIndex);
         require(!_from.equals(auctionDB.getAuctionCreator()), "Auction Creator Not Allowed To Bid");
-        require(now().compareTo(auctionDB.getAuctionEndTime()) < 0, "Auction Ended");
+        require(!auctionDB.getTransferred() || !auctionDB.getNoParticipation() || now().compareTo(auctionDB.getAuctionEndTime()) < 0, "Auction Ended");
         require(value.compareTo(auctionDB.getMinimumBid()) > 0 &&
                 value.compareTo(auctionDB.getHighestBid()) > 0, "Invalid Bid Value");
 
@@ -110,15 +108,16 @@ public class Auction {
         }
 
         auctionDB.setTransferred(true);
+        auctionDB.setAuctionEndTime(now());
         auction.set(auctionId, auctionDB);
-        AuctionCompleted(auctionId, contractAddress, nftId);
+        AuctionCompleted(auctionId, contractAddress, auctionDB.getHighestBidder(), nftId);
     }
 
     @External
-    public void transferToTreasury(Address treasury, BigInteger value) {
+    public void transferToTreasury(Address treasury) {
         require(getCaller().equals(getOwner()), "Owner Only");
-        require(value.compareTo(getBalance(getAddress())) <= 0, "Invalid Value");
-        transfer(treasury, value);
+        BigInteger balance = getBalance(getAddress());
+        transfer(treasury, balance);
     }
 
     void transferToContract(Address contractAddress, Address _from, BigInteger _tokenId) {
@@ -152,7 +151,7 @@ public class Auction {
     }
 
     @EventLog(indexed = 2)
-    public void AuctionCompleted(BigInteger index, Address contractAddress, BigInteger nftId) {
+    public void AuctionCompleted(BigInteger index, Address highestBidder, Address contractAddress, BigInteger nftId) {
     }
 
 
