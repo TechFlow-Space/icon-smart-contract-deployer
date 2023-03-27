@@ -43,9 +43,10 @@ public class AuctionTest extends TestBase {
     @Test
     public void createAuctionTest() {
         BigInteger endTime = BigInteger.valueOf(Context.getBlockTimestamp() + 1000000000);
-        score.invoke(tom, "createAuction", dummyScore.getAddress(), BigInteger.ONE, endTime);
+        score.invoke(tom, "createAuction", dummyScore.getAddress(), BigInteger.ONE, BigInteger.TEN, endTime);
         AuctionDB auctionDB = (AuctionDB) score.call("getCurrentAuction");
         assertEquals(BigInteger.ONE, auctionDB.getId());
+        assertEquals(BigInteger.TEN, auctionDB.getMinimumBid());
         assertEquals(ZERO_ADDRESS, auctionDB.getHighestBidder());
         assertEquals(BigInteger.ZERO, auctionDB.getHighestBid());
         assertEquals(dummyScore.getAddress(), auctionDB.getContractAddress());
