@@ -45,13 +45,13 @@ public class AuctionDB {
         obj.setId(reader.readBigInteger());
         obj.setAuctionCreator(reader.readAddress());
         obj.setContractAddress(reader.readAddress());
+        obj.setMinimumBid(reader.readBigInteger());
         obj.setHighestBid(reader.readBigInteger());
         obj.setHighestBidder(reader.readAddress());
         obj.setNftId(reader.readBigInteger());
         obj.setAuctionEndTime(reader.readBigInteger());
         obj.setTransferred(reader.readBoolean());
         obj.setNoParticipation(reader.readBoolean());
-        obj.setMinimumBid(reader.readBigInteger());
         reader.end();
         return obj;
     }
