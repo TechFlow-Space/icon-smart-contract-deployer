@@ -30,15 +30,19 @@ deployJar {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
         }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            to = 'cxc06fd04d2e06e106e2cc6fa760ec9a03293bac6c'
+            nid = 0x2
+        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
 
     parameters {
-        arg('_name','MyIRC3')
-        arg('_symbol','IRC3')
-        arg('_cap','0x12')
-        arg('_mintCost','0x12')
+        arg('_symbol','MyIRC3')
+        arg('_cap','0x234')
+        arg('_mintCost','0x10')
     }
 }
 
