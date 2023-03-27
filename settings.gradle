@@ -1,3 +1,10 @@
 rootProject.name = 'core-contracts'
 include 'TokenFactory'
+include 'GenericIRC2'
+include 'GenericIRC3'
+include 'GenericIRC31'
+include 'GenericMarketPlace'
+include 'GenericDAO'
+include 'GenericAirdrop'
+include 'GenericNFTAuction'
 

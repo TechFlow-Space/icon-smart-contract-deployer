@@ -81,13 +81,13 @@ public class TokenFactory {
     @Payable
     public void deployContract(String key, Address deployer, byte[] _data) {
         require(!deployer.equals(ZERO_ADDRESS), Message.zeroAddress());
-        require(getValue().equals(this.getDeployFee()), Message.paymentMismatch());
+        require(getPaidValue().equals(this.getDeployFee()), Message.paymentMismatch());
         require(this.content.keys().contains(key), Message.Not.deployed());
 
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
         byte[] content = this.content.get(key);
         Address contract = deployContract(key, content, _data);
-        call(CHAIN_ADDRESS, "setScoreOwner",contract, deployer);
+        setScoreOwner(contract, deployer);
 
         ContractDB contractDB = new ContractDB(currentSize, key, deployer, BigInteger.valueOf(getBlockTimestamp()), contract);
         this.deploymentDetail.set(currentSize, contractDB);
@@ -99,9 +99,15 @@ public class TokenFactory {
         JsonObject data = unpackAndFetchObject(_data);
         switch (key) {
             case "IRC2":
-                return deploy(content, data.get("name").asString(), data.get("symbol").asString(), data.get("decimal").asInt());
+                return deploy(content, data.get("name").asString(), data.get("symbol").asString(), new BigInteger(data.get("decimal").asString()));
             case "IRC3":
-                return deploy(content, data.get("param1"));
+                return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
+                        new BigInteger(data.get("cap").asString()), new BigInteger(data.get("mintCost").asString()));
+            case "IRC31":
+                return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
+                        new BigInteger(data.get("cap").asString()), new BigInteger(data.get("maxBatchMintCount").asString()));
+            case "MARKETPLACE":
+                return deploy(content);
             default:
                 throw new UserRevertedException("Invalid Key");
         }
@@ -114,8 +120,22 @@ public class TokenFactory {
 
 
     @External(readonly = true)
-    public ContractDB getDeployedContracts(Address deployer) {
-        return this.deployerDetail.at(deployer).get(0);
+    public ContractDB[] getDeployedContracts(Address deployer, int offset, int limit, String order) {
+        int deployedCount = this.deployerDetail.at(deployer).size();
+        ArrayDB<ContractDB> deployerDetail = this.deployerDetail.at(deployer);
+        int maxCount = Math.min(offset + limit, deployedCount);
+        ContractDB[] deployedContracts = new ContractDB[maxCount - offset];
+
+        if (order.equals("desc")) {
+            for (int i = maxCount - 1, j = 0; i >= offset; i--, j++) {
+                deployedContracts[j] = deployerDetail.get(i);
+            }
+        } else {
+            for (int i = offset, j = 0; i < maxCount; i++, j++) {
+                deployedContracts[j] = deployerDetail.get(i);
+            }
+        }
+        return deployedContracts;
     }
 
     @External(readonly = true)
@@ -127,6 +147,14 @@ public class TokenFactory {
     public void transferToTreasury(BigInteger amount) {
         this.ownerOnly();
         transfer(getTreasury(), amount);
+    }
+
+    protected BigInteger getPaidValue(){
+        return Context.getValue();
+    }
+
+    protected void setScoreOwner(Address contract, Address deployer){
+        call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
     }
 
     @EventLog(indexed = 2)
