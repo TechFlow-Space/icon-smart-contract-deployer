@@ -43,9 +43,11 @@ public class Auction {
     }
 
     @External
-    public void createAuction(Address contractAddress, BigInteger id, BigInteger auctionEndTime) {
+    public void createAuction(Address contractAddress, BigInteger id, BigInteger minimumBid, BigInteger auctionEndTime) {
         Address _from = getCaller();
         BigInteger currentIndex = currentAuctionIndex.getOrDefault(BigInteger.ZERO);
+        require(minimumBid.compareTo(BigInteger.ZERO) > 0, "Minimum Bid must be greater than 0");
+        require(auctionEndTime.compareTo(now()) > 0, "Invalid auction end time");
 
         if (!currentIndex.equals(BigInteger.ZERO)) {
             AuctionDB currentAuction = auction.get(currentIndex);
@@ -57,7 +59,7 @@ public class Auction {
         validateOwner(contractAddress, getAddress(), id);
 
         BigInteger newIndex = currentIndex.add(BigInteger.ONE);
-        AuctionDB auctionDB = new AuctionDB(newIndex, _from, contractAddress, BigInteger.ZERO, ZERO_ADDRESS, id, auctionEndTime);
+        AuctionDB auctionDB = new AuctionDB(newIndex, _from, contractAddress, minimumBid, BigInteger.ZERO, ZERO_ADDRESS, id, auctionEndTime);
         currentAuctionIndex.set(newIndex);
         auction.set(newIndex, auctionDB);
         AuctionCreated(newIndex, _from, contractAddress, id);
@@ -74,7 +76,8 @@ public class Auction {
         AuctionDB auctionDB = auction.get(currentIndex);
         require(!_from.equals(auctionDB.getAuctionCreator()), "Auction Creator Not Allowed To Bid");
         require(now().compareTo(auctionDB.getAuctionEndTime()) < 0, "Auction Ended");
-        require(value.compareTo(auctionDB.getHighestBid()) > 0, "Invalid Bid Value");
+        require(value.compareTo(auctionDB.getMinimumBid()) > 0 &&
+                value.compareTo(auctionDB.getHighestBid()) > 0, "Invalid Bid Value");
 
         auctionDB.setHighestBid(value);
         auctionDB.setHighestBidder(_from);
@@ -85,6 +88,7 @@ public class Auction {
     @External
     public void endAuction(BigInteger auctionId) {
         AuctionDB auctionDB = auction.get(auctionId);
+        require(auctionDB != null, "Invalid Auction Id");
         require(getCaller().equals(auctionDB.getAuctionCreator()), "OnlyAuctionCreator");
         Address contractAddress = auctionDB.getContractAddress();
         Address highestBidder = auctionDB.getHighestBidder();

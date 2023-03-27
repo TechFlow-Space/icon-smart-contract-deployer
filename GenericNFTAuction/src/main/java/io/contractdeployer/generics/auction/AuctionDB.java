@@ -13,6 +13,7 @@ public class AuctionDB {
     private BigInteger id;
     private Address auctionCreator;
     private Address contractAddress;
+    private BigInteger minimumBid;
     private BigInteger highestBid;
     private Address highestBidder;
     private BigInteger nftId;
@@ -24,10 +25,12 @@ public class AuctionDB {
     }
 
     public AuctionDB(BigInteger id, Address auctionCreator, Address contractAddress,
-                     BigInteger highestBid, Address highestBidder, BigInteger nftId, BigInteger auctionEndTime) {
+                     BigInteger minimumBid, BigInteger highestBid, Address highestBidder,
+                     BigInteger nftId, BigInteger auctionEndTime) {
         this.id = id;
         this.auctionCreator = auctionCreator;
         this.contractAddress = contractAddress;
+        this.minimumBid = minimumBid;
         this.highestBid = highestBid;
         this.highestBidder = highestBidder;
         this.nftId = nftId;
@@ -48,15 +51,17 @@ public class AuctionDB {
         obj.setAuctionEndTime(reader.readBigInteger());
         obj.setTransferred(reader.readBoolean());
         obj.setNoParticipation(reader.readBoolean());
+        obj.setMinimumBid(reader.readBigInteger());
         reader.end();
         return obj;
     }
 
     public static void writeObject(ObjectWriter w, AuctionDB obj) {
-        w.beginList(9);
+        w.beginList(10);
         w.write(obj.id);
         w.write(obj.auctionCreator);
         w.write(obj.contractAddress);
+        w.write(obj.minimumBid);
         w.write(obj.highestBid);
         w.write(obj.highestBidder);
         w.write(obj.nftId);
@@ -150,6 +155,14 @@ public class AuctionDB {
 
     public void setNoParticipation(Boolean noParticipation) {
         this.noParticipation = noParticipation;
+    }
+
+    public BigInteger getMinimumBid() {
+        return minimumBid;
+    }
+
+    public void setMinimumBid(BigInteger minimumBid) {
+        this.minimumBid = minimumBid;
     }
 }
 
