@@ -40,7 +40,7 @@ deployJar {
     endpoints {
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
-            to = 'cxf375251adaea63962f0a4ba95a9f03313d2aa0f7';
+//            to = 'cxf375251adaea63962f0a4ba95a9f03313d2aa0f7';
             nid = 0x7
         }
         sejong {

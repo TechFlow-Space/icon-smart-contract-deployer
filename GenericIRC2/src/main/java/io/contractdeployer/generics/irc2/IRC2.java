@@ -12,7 +12,7 @@ import static io.contractdeployer.generics.irc2.Vars.*;
 
 public class IRC2 implements InterfaceIRC2 {
 
-    public IRC2(String _name, String _symbol,BigInteger _decimals) {
+    public IRC2(String _name, String _symbol,BigInteger _decimals,Address _minter) {
 
         if (name.get() == null) {
             name.set(ensureNotEmpty(_name));
@@ -22,10 +22,8 @@ public class IRC2 implements InterfaceIRC2 {
             Context.require(_decimals.intValue() <= 21, "decimals needs to be equal or lower than 21");
             decimals.set(_decimals);
 
-            Address minterAddress = minter.get();
-            if (minterAddress == null) {
-                minter.set(Context.getOwner());
-            }
+            minter.set(_minter);
+
         }
     }
 
@@ -80,9 +78,9 @@ public class IRC2 implements InterfaceIRC2 {
     }
 
     @External
-    public void mint(BigInteger _amount, Address address) {
-        Context.require(Context.getCaller().equals(minter.get()), Message.Not.minter());
-        _mint(address, _amount);
+    public void mint(Address to,BigInteger _amount) {
+        Context.require(Context.getOrigin().equals(minter.get()), Message.Not.minter());
+        _mint(to, _amount);
     }
 
     @External

@@ -154,7 +154,7 @@ public class IRC31 implements InterfaceIRC31 {
 
     @External
     public void setApprovalForAll(Address _operator, boolean _approved) {
-        final Address caller = Context.getCaller();
+        final Address caller = Context.getOrigin();
 
         operatorApproval.at(caller).set(_operator, _approved);
         this.ApprovalForAll(caller, _operator, _approved);

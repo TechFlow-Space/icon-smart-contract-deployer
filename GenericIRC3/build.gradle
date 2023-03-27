@@ -18,7 +18,7 @@ deployJar {
     endpoints {
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
-            to = 'cxa191038394e35ca363fd89a61221eebf38e37f4d'
+//            to = 'cx5250c3b2899bbe3737985a3d522fc963713d3c01'
             nid = 0x7
         }
         sejong {
@@ -40,7 +40,6 @@ deployJar {
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
 
     parameters {
-        arg('_name','MyIRC3')
         arg('_symbol','MyIRC3')
         arg('_cap','0x234')
         arg('_mintCost','0x10')

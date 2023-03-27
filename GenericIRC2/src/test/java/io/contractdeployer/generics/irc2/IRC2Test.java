@@ -29,14 +29,15 @@ public class IRC2Test extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private static final Account user = sm.createAccount();
+    private static final Account minter = sm.createAccount();
     private static Score ircScore;
     private static IRC2 tokenSpy;
 
     @BeforeEach
     public void setup() throws Exception {
         ircScore = sm.deploy(owner, IRC2.class,
-                name, symbol, decimals);
-        ircScore.invoke(owner,"mint",totalSupply,owner.getAddress());
+                name, symbol, BigInteger.valueOf(decimals),minter.getAddress());
+        ircScore.invoke(minter,"mint",owner.getAddress(),totalSupply);
 
         // setup spy object against the ircScore object
         tokenSpy = (IRC2) spy(ircScore.getInstance());
@@ -102,16 +103,16 @@ public class IRC2Test extends TestBase {
         Account admin=sm.createAccount();
         ircScore.invoke(owner,"setMinter", admin.getAddress());
 
-        Executable call = () -> ircScore.invoke(owner,"mint", BigInteger.valueOf(val),owner.getAddress());
+        Executable call = () -> ircScore.invoke(owner,"mint", owner.getAddress(),BigInteger.valueOf(val));
         expectErrorMessage(call, Message.Not.minter());
 
-        call = () -> ircScore.invoke(admin,"mint", BigInteger.valueOf(val),ZERO_ADDRESS);
+        call = () -> ircScore.invoke(admin,"mint", ZERO_ADDRESS,BigInteger.valueOf(val));
         expectErrorMessage(call, Message.Found.zeroAddr("Owner"));
 
-        call = () -> ircScore.invoke(admin,"mint", BigInteger.ZERO,user.getAddress());
+        call = () -> ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.ZERO);
         expectErrorMessage(call, Message.greaterThanZero("Amount"));
 
-        ircScore.invoke(admin,"mint", BigInteger.valueOf(val),owner.getAddress());
+        ircScore.invoke(admin,"mint", owner.getAddress(),BigInteger.valueOf(val));
         assertEquals(ircScore.call("totalSupply"),totalSupply.add(BigInteger.valueOf(val)));
         assertEquals(ircScore.call("balanceOf",owner.getAddress()),totalSupply.add(BigInteger.valueOf(val)));
     }
