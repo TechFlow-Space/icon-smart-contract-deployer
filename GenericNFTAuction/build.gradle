@@ -26,7 +26,7 @@ deployJar {
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
-            to = 'cx1a6595f4a9abbdc08dfeda6633d81eb2c68971d1'
+            to = 'cx520f8db5b626ca05f9ddc55459742073caf12fcd'
             nid = 0x2
         }
         sejong {

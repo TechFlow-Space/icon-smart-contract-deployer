@@ -7,6 +7,7 @@ import score.annotation.Payable;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.Objects;
 
 import static io.contractdeployer.generics.auction.Constant.ZERO_ADDRESS;
 import static io.contractdeployer.generics.auction.Vars.auction;
@@ -26,17 +27,24 @@ public class Auction {
     }
 
     @External(readonly = true)
-    public Map<String, Object>[] getAuctions(int offset, int limit, String order) {
+    public AuctionDB[] getAuctions(int offset, int limit, String order) {
+
         int auctionIndex = currentAuctionIndex.getOrDefault(BigInteger.ZERO).intValue();
+        if (offset == 0) {
+            offset++;
+            limit++;
+            auctionIndex++;
+        }
+
         int maxCount = Math.min(offset + limit, auctionIndex);
-        Map<String, Object>[] auctions = new Map[maxCount];
+        AuctionDB[] auctions = new AuctionDB[maxCount - offset];
         if (order.equals("desc")) {
             for (int i = maxCount - 1, j = 0; i >= offset; i--, j++) {
-                auctions[j] = auction.get(BigInteger.valueOf(i)).toObject();
+                auctions[j] = auction.get(BigInteger.valueOf(i));
             }
         } else {
             for (int i = offset, j = 0; i < maxCount; i++, j++) {
-                auctions[j] = auction.get(BigInteger.valueOf(i)).toObject();
+                auctions[j] = auction.get(BigInteger.valueOf(i));
             }
         }
         return auctions;
