@@ -10,16 +10,16 @@ import java.util.Map;
 public class ContentDB {
 
     private String content;
-    private BigInteger timestamp;
+    private BigInteger lastUpdated;
     private Address updatedBy;
     private String type;
 
     public ContentDB() {
     }
 
-    public ContentDB(String content, BigInteger timestamp, Address updatedBy, String type) {
+    public ContentDB(String content, BigInteger lastUpdated, Address updatedBy, String type) {
         this.content = content;
-        this.timestamp = timestamp;
+        this.lastUpdated = lastUpdated;
         this.updatedBy = updatedBy;
         this.type = type;
     }
@@ -28,7 +28,7 @@ public class ContentDB {
         ContentDB obj = new ContentDB();
         reader.beginList();
         obj.setContent(reader.readString());
-        obj.setTimestamp(reader.readBigInteger());
+        obj.setLastUpdated(reader.readBigInteger());
         obj.setUpdatedBy(reader.readAddress());
         obj.setType(reader.readString());
         reader.end();
@@ -38,7 +38,7 @@ public class ContentDB {
     public static void writeObject(ObjectWriter w, ContentDB obj) {
         w.beginList(4);
         w.write(obj.content);
-        w.write(obj.timestamp);
+        w.write(obj.lastUpdated);
         w.write(obj.updatedBy);
         w.write(obj.type);
         w.end();
@@ -46,10 +46,10 @@ public class ContentDB {
 
     public Map<String, Object> toObject() {
         return Map.of(
-                "content", getContent().getBytes(),
-                "timestamp", getTimestamp(),
-                "updatedBy", getUpdatedBy(),
-                "type", getType());
+                "type", getType(),
+                "lastUpdated", getLastUpdated(),
+                "updatedBy", getUpdatedBy()
+                );
     }
 
     public String getContent() {
@@ -60,12 +60,12 @@ public class ContentDB {
         this.content = content;
     }
 
-    public BigInteger getTimestamp() {
-        return timestamp;
+    public BigInteger getLastUpdated() {
+        return lastUpdated;
     }
 
-    public void setTimestamp(BigInteger timestamp) {
-        this.timestamp = timestamp;
+    public void setLastUpdated(BigInteger lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 
     public Address getUpdatedBy() {

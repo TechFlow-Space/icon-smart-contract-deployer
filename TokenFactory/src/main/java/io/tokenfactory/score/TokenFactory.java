@@ -108,7 +108,7 @@ public class TokenFactory {
         require(this.content.keys().contains(key), Message.Not.deployed());
 
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
-        byte[] content = (byte[]) this.content.get(key).toObject().get("content");
+        byte[] content = (byte[]) this.content.get(key).getContent().getBytes();
         Address contract = deployContract(key, content, _data);
         setScoreOwner(contract, deployer);
 
