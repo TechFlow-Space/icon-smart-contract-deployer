@@ -60,7 +60,7 @@ public class TokenFactory {
     }
 
     @External
-    public void setContractContent(String name, byte[] content, @Optional boolean isUpdate) {
+    public void setContractContent(String name, String description, byte[] content, @Optional boolean isUpdate) {
         adminOnly();
         contractNameValidate(name);
         BigInteger timestamp = BigInteger.valueOf(getBlockTimestamp());
@@ -70,7 +70,7 @@ public class TokenFactory {
             require(!this.content.keys().contains(name), Message.duplicateContract());
         }
 
-        ContentDB contentDB = new ContentDB(new String(content), timestamp, caller, name);
+        ContentDB contentDB = new ContentDB(new String(content), description, timestamp, caller, name);
         this.content.set(name, contentDB);
         if (isUpdate) {
             this.ContentUpdated(name, caller);
@@ -108,7 +108,7 @@ public class TokenFactory {
         require(this.content.keys().contains(key), Message.Not.deployed());
 
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
-        byte[] content = (byte[]) this.content.get(key).getContent().getBytes();
+        byte[] content = this.content.get(key).getContent().getBytes();
         Address contract = deployContract(key, content, _data);
         setScoreOwner(contract, deployer);
 

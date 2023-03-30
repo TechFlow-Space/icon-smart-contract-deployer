@@ -10,6 +10,8 @@ import java.util.Map;
 public class ContentDB {
 
     private String content;
+
+    private String description;
     private BigInteger lastUpdated;
     private Address updatedBy;
     private String type;
@@ -17,8 +19,9 @@ public class ContentDB {
     public ContentDB() {
     }
 
-    public ContentDB(String content, BigInteger lastUpdated, Address updatedBy, String type) {
+    public ContentDB(String content, String description, BigInteger lastUpdated, Address updatedBy, String type) {
         this.content = content;
+        this.description = description;
         this.lastUpdated = lastUpdated;
         this.updatedBy = updatedBy;
         this.type = type;
@@ -28,6 +31,7 @@ public class ContentDB {
         ContentDB obj = new ContentDB();
         reader.beginList();
         obj.setContent(reader.readString());
+        obj.setDescription(reader.readString());
         obj.setLastUpdated(reader.readBigInteger());
         obj.setUpdatedBy(reader.readAddress());
         obj.setType(reader.readString());
@@ -38,6 +42,7 @@ public class ContentDB {
     public static void writeObject(ObjectWriter w, ContentDB obj) {
         w.beginList(4);
         w.write(obj.content);
+        w.write(obj.description);
         w.write(obj.lastUpdated);
         w.write(obj.updatedBy);
         w.write(obj.type);
@@ -49,7 +54,7 @@ public class ContentDB {
                 "type", getType(),
                 "lastUpdated", getLastUpdated(),
                 "updatedBy", getUpdatedBy()
-                );
+        );
     }
 
     public String getContent() {
@@ -58,6 +63,14 @@ public class ContentDB {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public BigInteger getLastUpdated() {
