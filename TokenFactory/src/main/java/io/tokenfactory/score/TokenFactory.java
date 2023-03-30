@@ -2,17 +2,21 @@ package io.tokenfactory.score;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import io.tokenfactory.score.dbs.ContentDB;
 import io.tokenfactory.score.dbs.ContractDB;
 import io.tokenfactory.score.utils.IterableDictDB;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 
 import static io.tokenfactory.score.Constant.*;
+import static io.tokenfactory.score.enums.ContractName.contractNameValidate;
 import static score.Context.*;
 
 public class TokenFactory {
@@ -20,7 +24,7 @@ public class TokenFactory {
     private final VarDB<Address> admin = newVarDB(ADMIN, Address.class);
     private final VarDB<Address> treasury = newVarDB(TREASURY, Address.class);
     private final VarDB<BigInteger> deployFee = newVarDB(DEPLOY_FEE, BigInteger.class);
-    private final IterableDictDB<String, byte[]> content = new IterableDictDB<>(SCORE_CONTENT, byte[].class, String.class, false);
+    private final IterableDictDB<String, ContentDB> content = new IterableDictDB<>(SCORE_CONTENT, ContentDB.class, String.class, false);
     private final IterableDictDB<BigInteger, ContractDB> deploymentDetail = new IterableDictDB<>(DEPLOYMENT_DETAIL, ContractDB.class, BigInteger.class, false);
     private final BranchDB<Address, ArrayDB<ContractDB>> deployerDetail = newBranchDB(CONTRACT_DEPLOYER, ContractDB.class);
 
@@ -55,11 +59,23 @@ public class TokenFactory {
     }
 
     @External
-    public void setContractContent(String name, byte[] content) {
+    public void setContractContent(String name, String type, byte[] content, @Optional boolean isUpdate) {
         adminOnly();
-        require(availableContracts.contains(name), Message.Not.validContract());
-        require(!this.content.keys().contains(name), Message.duplicateContract());
-        this.content.set(name, content);
+        contractNameValidate(type);
+        BigInteger timestamp = BigInteger.valueOf(getBlockTimestamp());
+        Address caller = getCaller();
+
+        if (!isUpdate) {
+            require(!this.content.keys().contains(name), Message.duplicateContract());
+        }
+
+        ContentDB contentDB = new ContentDB(name, new String(content), timestamp, caller, type);
+        this.content.set(name, contentDB);
+        if (isUpdate) {
+            this.ContentUpdated(name, caller);
+        } else {
+            this.ContentSet(name, caller);
+        }
     }
 
     @External(readonly = true)
@@ -68,8 +84,8 @@ public class TokenFactory {
     }
 
     @External(readonly = true)
-    public byte[] getContractContent(String key) {
-        return this.content.get(key);
+    public Map<String, Object> getContractContent(String key) {
+        return this.content.get(key).toObject();
     }
 
     @External(readonly = true)
@@ -85,14 +101,14 @@ public class TokenFactory {
         require(this.content.keys().contains(key), Message.Not.deployed());
 
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
-        byte[] content = this.content.get(key);
+        byte[] content = (byte[]) this.content.get(key).toObject().get("content");
         Address contract = deployContract(key, content, _data);
         setScoreOwner(contract, deployer);
 
         ContractDB contractDB = new ContractDB(currentSize, key, deployer, BigInteger.valueOf(getBlockTimestamp()), contract);
         this.deploymentDetail.set(currentSize, contractDB);
         this.deployerDetail.at(deployer).add(contractDB);
-        this.ContractDeployed(deployer, key);
+        this.ContractDeployed(contract, deployer, key);
     }
 
     Address deployContract(String key, byte[] content, byte[] _data) {
@@ -106,7 +122,10 @@ public class TokenFactory {
             case "IRC31":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
                         new BigInteger(data.get("cap").asString()), new BigInteger(data.get("maxBatchMintCount").asString()));
+            case "NFT_AUCTION":
+            case "AIRDROP":
             case "MARKETPLACE":
+            case "DAO":
                 return deploy(content);
             default:
                 throw new UserRevertedException("Invalid Key");
@@ -149,16 +168,24 @@ public class TokenFactory {
         transfer(getTreasury(), amount);
     }
 
-    protected BigInteger getPaidValue(){
+    protected BigInteger getPaidValue() {
         return Context.getValue();
     }
 
-    protected void setScoreOwner(Address contract, Address deployer){
+    protected void setScoreOwner(Address contract, Address deployer) {
         call(CHAIN_ADDRESS, "setScoreOwner", contract, deployer);
     }
 
     @EventLog(indexed = 2)
-    public void ContractDeployed(Address deployer, String name) {
+    public void ContractDeployed(Address contract, Address deployer, String name) {
+    }
+
+    @EventLog(indexed = 2)
+    public void ContentSet(String name, Address caller) {
+    }
+
+    @EventLog(indexed = 2)
+    public void ContentUpdated(String name, Address caller) {
     }
 
     void ownerOnly() {

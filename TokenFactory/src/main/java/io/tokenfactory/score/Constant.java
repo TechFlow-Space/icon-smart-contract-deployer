@@ -9,7 +9,6 @@ import static io.tokenfactory.score.enums.ContractName.*;
 public class Constant {
 
     public static final String TAG = "TokenFactory";
-    public static final List<String> availableContracts = List.of(MARKETPLACE.name(), IRC2.name(), IRC3.name(), IRC31.name());
     public static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     public static final Address CHAIN_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
 
