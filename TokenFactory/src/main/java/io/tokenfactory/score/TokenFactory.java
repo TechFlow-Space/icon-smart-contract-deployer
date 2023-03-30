@@ -10,6 +10,7 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
+import scorex.util.ArrayList;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -59,9 +60,9 @@ public class TokenFactory {
     }
 
     @External
-    public void setContractContent(String name, String type, byte[] content, @Optional boolean isUpdate) {
+    public void setContractContent(String name, byte[] content, @Optional boolean isUpdate) {
         adminOnly();
-        contractNameValidate(type);
+        contractNameValidate(name);
         BigInteger timestamp = BigInteger.valueOf(getBlockTimestamp());
         Address caller = getCaller();
 
@@ -69,7 +70,7 @@ public class TokenFactory {
             require(!this.content.keys().contains(name), Message.duplicateContract());
         }
 
-        ContentDB contentDB = new ContentDB(name, new String(content), timestamp, caller, type);
+        ContentDB contentDB = new ContentDB(new String(content), timestamp, caller, name);
         this.content.set(name, contentDB);
         if (isUpdate) {
             this.ContentUpdated(name, caller);
@@ -79,8 +80,14 @@ public class TokenFactory {
     }
 
     @External(readonly = true)
-    public List<String> getAvailableContractContent() {
-        return this.content.keys();
+    public List<Map<String, Object>> getContracts() {
+        List<Map<String, Object>> contracts = new ArrayList<>();
+        int size = content.keys().size();
+        for (int i = 0; i < size; i++) {
+            String key = content.keys().get(i);
+            contracts.add(content.get(key).toObject());
+        }
+        return contracts;
     }
 
     @External(readonly = true)
@@ -128,7 +135,7 @@ public class TokenFactory {
             case "DAO":
                 return deploy(content);
             default:
-                throw new UserRevertedException("Invalid Key");
+                throw new UserRevertedException(Message.Not.validContract());
         }
     }
 

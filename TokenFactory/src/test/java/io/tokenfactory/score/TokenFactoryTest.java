@@ -68,15 +68,15 @@ public class TokenFactoryTest extends TestBase{
     @Test
     void setContractContent(){
 
-        Executable call = () -> score.invoke(user,"setContractContent", "IRC2","content".getBytes());
+        Executable call = () -> score.invoke(user,"setContractContent", "IRC2","content".getBytes(), false);
         expectErrorMessage(call, Message.Not.admin());
 
-        call = () -> score.invoke(admin,"setContractContent", "IRC21","content".getBytes());
+        call = () -> score.invoke(admin,"setContractContent", "IRC21","content".getBytes(), false);
         expectErrorMessage(call, Message.Not.validContract());
 
-        score.invoke(admin,"setContractContent", "IRC2","content".getBytes());
+        score.invoke(admin,"setContractContent", "IRC2","content".getBytes(), false);
 
-        call = () -> score.invoke(admin,"setContractContent", "IRC2","content".getBytes());
+        call = () -> score.invoke(admin,"setContractContent", "IRC2","content".getBytes(), false);
         expectErrorMessage(call, Message.duplicateContract());
 
     }
@@ -108,7 +108,7 @@ public class TokenFactoryTest extends TestBase{
         call = () -> score.invoke(user,"deployContract", "IRC2",user.getAddress(),irc2_data);
         expectErrorMessage(call, Message.Not.deployed());
 
-        score.invoke(admin,"setContractContent", "IRC2","content".getBytes());
+        score.invoke(admin,"setContractContent", "IRC2","content".getBytes(), false);
 
         doReturn(contract.getAddress()).when(spyScore).deployContract("IRC2","content".getBytes(),irc2_data);
 

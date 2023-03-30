@@ -9,7 +9,6 @@ import java.util.Map;
 
 public class ContentDB {
 
-    private String name;
     private String content;
     private BigInteger timestamp;
     private Address updatedBy;
@@ -18,8 +17,7 @@ public class ContentDB {
     public ContentDB() {
     }
 
-    public ContentDB(String name, String content, BigInteger timestamp, Address updatedBy, String type) {
-        this.name = name;
+    public ContentDB(String content, BigInteger timestamp, Address updatedBy, String type) {
         this.content = content;
         this.timestamp = timestamp;
         this.updatedBy = updatedBy;
@@ -29,7 +27,6 @@ public class ContentDB {
     public static ContentDB readObject(ObjectReader reader) {
         ContentDB obj = new ContentDB();
         reader.beginList();
-        obj.setName(reader.readString());
         obj.setContent(reader.readString());
         obj.setTimestamp(reader.readBigInteger());
         obj.setUpdatedBy(reader.readAddress());
@@ -39,8 +36,7 @@ public class ContentDB {
     }
 
     public static void writeObject(ObjectWriter w, ContentDB obj) {
-        w.beginList(5);
-        w.write(obj.name);
+        w.beginList(4);
         w.write(obj.content);
         w.write(obj.timestamp);
         w.write(obj.updatedBy);
@@ -49,19 +45,11 @@ public class ContentDB {
     }
 
     public Map<String, Object> toObject() {
-        return Map.of("name", getName(),
+        return Map.of(
                 "content", getContent().getBytes(),
                 "timestamp", getTimestamp(),
                 "updatedBy", getUpdatedBy(),
                 "type", getType());
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getContent() {

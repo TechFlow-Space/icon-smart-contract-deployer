@@ -16,7 +16,7 @@ public class Message {
         return TAG + " :: " + "PaymentMismatch";
     }
 
-    static class Not {
+    public static class Not {
         public static final String owner(){
             return TAG + " :: " + "NotOwner";
         }

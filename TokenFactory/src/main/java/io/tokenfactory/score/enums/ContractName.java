@@ -1,5 +1,6 @@
 package io.tokenfactory.score.enums;
 
+import io.tokenfactory.score.Message;
 import score.UserRevertedException;
 
 public enum ContractName {
@@ -23,7 +24,7 @@ public enum ContractName {
             case "AIRDROP":
                 break;
             default:
-                throw new UserRevertedException("Invalid Type");
+                throw new UserRevertedException(Message.Not.validContract());
         }
     }
 }
