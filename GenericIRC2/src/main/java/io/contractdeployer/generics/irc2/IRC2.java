@@ -62,9 +62,9 @@ public class IRC2 extends IRC2Basic {
     @EventLog(indexed = 3)
     public void Mint(Address _caller, Address _to, BigInteger _amount){}
 
-    @EventLog(indexed = 3)
+    @EventLog(indexed = 2)
     public void Burn(Address _from, BigInteger _amount){}
-
+//
     protected void onlyOwner(){
         Address caller = Context.getCaller();
         Address owner = Context.getOwner();
