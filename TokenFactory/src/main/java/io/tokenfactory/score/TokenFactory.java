@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.tokenfactory.score.Constant.*;
-import static io.tokenfactory.score.enums.ContractName.contractNameValidate;
+import static io.tokenfactory.score.enums.ContractType.contractTypeValidate;
 import static score.Context.*;
 
 public class TokenFactory {
@@ -60,9 +60,9 @@ public class TokenFactory {
     }
 
     @External
-    public void setContractContent(String name, String description, byte[] content, @Optional boolean isUpdate) {
+    public void setContractContent(String name, String type, String description, byte[] content, @Optional boolean isUpdate) {
         adminOnly();
-        contractNameValidate(name);
+        contractTypeValidate(name);
         BigInteger timestamp = BigInteger.valueOf(getBlockTimestamp());
         Address caller = getCaller();
 
@@ -70,7 +70,7 @@ public class TokenFactory {
             require(!this.content.keys().contains(name), Message.duplicateContract());
         }
 
-        ContentDB contentDB = new ContentDB(new String(content), description, timestamp, caller, name);
+        ContentDB contentDB = new ContentDB(name, new String(content), description, timestamp, caller, type);
         this.content.set(name, contentDB);
         if (isUpdate) {
             this.ContentUpdated(name, caller);

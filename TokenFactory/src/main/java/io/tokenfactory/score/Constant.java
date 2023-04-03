@@ -2,10 +2,6 @@ package io.tokenfactory.score;
 
 import score.Address;
 
-import java.util.List;
-
-import static io.tokenfactory.score.enums.ContractName.*;
-
 public class Constant {
 
     public static final String TAG = "TokenFactory";
