@@ -53,7 +53,8 @@ public class ContentDB {
         return Map.of(
                 "type", getType(),
                 "lastUpdated", getLastUpdated(),
-                "updatedBy", getUpdatedBy()
+                "updatedBy", getUpdatedBy(),
+                "description", getDescription()
         );
     }
 
