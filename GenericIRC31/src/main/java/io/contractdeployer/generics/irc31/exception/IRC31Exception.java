@@ -21,7 +21,7 @@ public class IRC31Exception {
     }
 
     public static String pairMismatch() {
-        return TAG + "Arrays do not have the same length.";
+        return TAG + " :: Arrays do not have the same length.";
     }
 
 
@@ -39,7 +39,7 @@ public class IRC31Exception {
 
 
     public static String lessThanZero() {
-        return TAG+" ::  Value must be greater than zero.";
+        return TAG+" :: Value must be greater than zero.";
     }
     public static String empty() {
         return TAG+" :: Can not set null or empty.";

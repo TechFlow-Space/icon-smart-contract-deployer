@@ -38,6 +38,7 @@ public class IRC31 extends IRC31Basic implements InterfaceIRC31{
 
             name.set(_name);
             symbol.set(_symbol);
+            admin.set(Context.getCaller());
             cap.set(_cap);
             maxBatchMintCount.set(_maxBatchMintCount);
             totalSupply.set(BigInteger.ZERO);
@@ -160,8 +161,8 @@ public class IRC31 extends IRC31Basic implements InterfaceIRC31{
     private void preMintConditions(Address address, BigInteger amount) {
         onlyAdminOrOwner();
         Context.require(!address.equals(ZERO_ADDRESS), IRC31Exception.zeroAddr());
-        Context.require(amount.compareTo(BigInteger.ZERO) > 0 &&
-                amount.compareTo(getMaxBatchMintCount())<=0, IRC31Exception.nftCountPerTxRange());
+        Context.require(amount.compareTo(BigInteger.ZERO) > 0,IRC31Exception.lessThanZero());
+        Context.require(amount.compareTo(getMaxBatchMintCount())<=0, IRC31Exception.nftCountPerTxRange());
         Context.require(getTotalSupply().add(amount).compareTo(getCap())<=0, IRC31Exception.capExceeded());
     }
 

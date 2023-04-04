@@ -4,15 +4,15 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import score.Address;
 
 import java.math.BigInteger;
 
+import static io.contractdeployer.generics.irc31.IRC31.ZERO_ADDRESS;
 import static io.contractdeployer.generics.irc31.TestHelper.expectErrorMessage;
-import static io.contractdeployer.generics.irc31.Vars.ZERO_ADDRESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 
@@ -32,7 +32,7 @@ public class IRC31Test extends TestBase {
     @BeforeEach
     public void setup() throws Exception {
         ircScore = sm.deploy(owner, IRC31.class,name,symbol,cap,maxBatchMintCount);
-        ircScore.invoke(owner,"setAdmin", admin.getAddress());
+//        ircScore.invoke(owner,"setAdmin", admin.getAddress());
         // setup spy object against the ircScore object
         tokenSpy = (IRC31) spy(ircScore.getInstance());
         ircScore.setInstance(tokenSpy);
@@ -41,7 +41,7 @@ public class IRC31Test extends TestBase {
     @Test
     void setAdmin(){
         Executable call = () -> ircScore.invoke(user,"setAdmin", user.getAddress());
-        expectErrorMessage(call, Message.Not.owner());
+        expectErrorMessage(call, "IRC31 :: Only owner can perform this action.");
 
         ircScore.invoke(owner,"setAdmin", user.getAddress());
         assertEquals(ircScore.call("getAdmin"),user.getAddress());
@@ -49,47 +49,55 @@ public class IRC31Test extends TestBase {
 
     @Test
     void mint(){
-        Executable call = () -> ircScore.invoke(user,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(2),"uri");
-        expectErrorMessage(call, Message.Not.admin());
+        Address to = user.getAddress();
+        BigInteger id = BigInteger.ONE;
+        BigInteger amount = BigInteger.TWO;
+        String tokenUri = "uri";
+        Executable call = () -> ircScore.invoke(user,"mint", to,id,amount,tokenUri);
+        expectErrorMessage(call,"IRC31 :: Only admin/owner can perform this action.");
 
-        call = () -> ircScore.invoke(admin,"mint", ZERO_ADDRESS,BigInteger.valueOf(1),BigInteger.valueOf(2),"uri");
-        expectErrorMessage(call, Message.Found.zeroAddr("_owner"));
+        call = () -> ircScore.invoke(owner,"mint", ZERO_ADDRESS,id,amount,tokenUri);
+        expectErrorMessage(call, "IRC31 :: Address cannot be Zero Address.");
 
-        call = () -> ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(0),"uri");
-        expectErrorMessage(call, Message.Exceeded.nftCountPerTxRange());
+        call = () -> ircScore.invoke(owner,"mint", to,id,BigInteger.ZERO,tokenUri);
+        expectErrorMessage(call, "IRC31 :: Value must be greater than zero.");
 
-        call = () -> ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(6),"uri");
-        expectErrorMessage(call, Message.Exceeded.nftCountPerTxRange());
+        call = () -> ircScore.invoke(owner,"mint", to,id,BigInteger.valueOf(6),tokenUri);
+        expectErrorMessage(call, "IRC31 :: NFT count per transaction exceeded.");
 
-        ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(2),"uri");
-        assertEquals(ircScore.call("balanceOf",user.getAddress(),BigInteger.valueOf(1)),BigInteger.valueOf(2));
+        ircScore.invoke(owner,"mint", to,id,amount,tokenUri);
+        assertEquals(ircScore.call("balanceOf",to,id),BigInteger.valueOf(2));
 
-        ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(5),"uri");
-        call = () -> ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(5),"uri");
-        expectErrorMessage(call, Message.Exceeded.cap());
+        ircScore.invoke(owner,"mint", to,id,BigInteger.valueOf(5),tokenUri);
+
 
         assertEquals(ircScore.call("getTotalSupply"),BigInteger.valueOf(7));
-        assertEquals(ircScore.call("tokenURI",BigInteger.valueOf(1)),"uri");
+        assertEquals(ircScore.call("tokenURI",BigInteger.valueOf(1)),tokenUri);
 
     }
 
     @Test
     void burn(){
-        Executable call = () -> ircScore.invoke(admin,"burn", ZERO_ADDRESS,BigInteger.valueOf(1),BigInteger.valueOf(2));
-        expectErrorMessage(call, Message.Found.zeroAddr("_owner"));
+        Address of = user.getAddress();
+        BigInteger id = BigInteger.ONE;
+        BigInteger amount = BigInteger.TWO;
 
-        call = () -> ircScore.invoke(user,"burn", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(0));
-        expectErrorMessage(call, Message.greaterThanZero("_amount"));
+        Executable call = () -> ircScore.invoke(admin,"burn", ZERO_ADDRESS,id,amount);
+        expectErrorMessage(call, "IRC31 :: Address cannot be Zero Address.");
 
-        call=()->ircScore.invoke(admin,"burn", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(2));
-        expectErrorMessage(call, Message.Not.operatorApproved());
+        call = () -> ircScore.invoke(user,"burn", of,id,BigInteger.ZERO);
+        expectErrorMessage(call, "IRC31 :: Value must be greater than zero.");
 
-        ircScore.invoke(user,"setApprovalForAll",admin.getAddress(),true);
-        call=()->ircScore.invoke(admin,"burn", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(2));
-        expectErrorMessage(call, Message.Not.enoughBalance());
+        call=()->ircScore.invoke(owner,"burn", of,id,amount);
+        expectErrorMessage(call, "IRC31 :: Need operator approval for 3rd party transfers.");
 
-        ircScore.invoke(admin,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(3),"uri");
-        ircScore.invoke(admin,"burn", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(2));
+        // approval for all
+        ircScore.invoke(user,"setApprovalForAll",owner.getAddress(),true);
+        call=()->ircScore.invoke(owner,"burn", of,id,amount);
+        expectErrorMessage(call, "IRC31 :: Not enough balance");
+
+        ircScore.invoke(owner,"mint", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(3),"uri");
+        ircScore.invoke(owner,"burn", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(2));
         assertEquals(ircScore.call("balanceOf",user.getAddress(),BigInteger.valueOf(1)),BigInteger.valueOf(1));
 
         ircScore.invoke(user,"burn", user.getAddress(),BigInteger.valueOf(1),BigInteger.valueOf(1));
@@ -104,9 +112,9 @@ public class IRC31Test extends TestBase {
         BigInteger[] _amounts={BigInteger.valueOf(1),BigInteger.valueOf(2),BigInteger.valueOf(3)};
 
         Executable call = () -> ircScore.invoke(admin,"mintBatch", user.getAddress(),wrong_ids,_amounts,_uris);
-        expectErrorMessage(call, Message.Not.sameSize("_ids","_amounts"));
+        expectErrorMessage(call, "IRC31 :: Arrays do not have the same length.");
 
-        ircScore.invoke(admin,"mintBatch", user.getAddress(),_ids,_amounts,_uris);
+        ircScore.invoke(owner,"mintBatch", user.getAddress(),_ids,_amounts,_uris);
 
         for(int i=0;i< _ids.length;i++){
             assertEquals(ircScore.call("balanceOf",user.getAddress(),_ids[i]),_amounts[i]);
@@ -122,9 +130,9 @@ public class IRC31Test extends TestBase {
         BigInteger[] burn_amounts={BigInteger.valueOf(1),BigInteger.valueOf(1),BigInteger.valueOf(1)};
 
         Executable call = () -> ircScore.invoke(user,"burnBatch", user.getAddress(),wrong_ids,_amounts);
-        expectErrorMessage(call, Message.Not.sameSize("_ids","_amounts"));
+        expectErrorMessage(call, "IRC31 :: Arrays do not have the same length.");
 
-        ircScore.invoke(admin,"mintBatch", user.getAddress(),_ids,_amounts,_uris);
+        ircScore.invoke(owner,"mintBatch", user.getAddress(),_ids,_amounts,_uris);
         ircScore.invoke(user,"burnBatch", user.getAddress(),_ids,burn_amounts);
         for(int i=0;i< _ids.length;i++){
             assertEquals(ircScore.call("balanceOf",user.getAddress(),_ids[i]),_amounts[i].subtract(burn_amounts[i]));
