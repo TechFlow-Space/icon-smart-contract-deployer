@@ -12,7 +12,6 @@ import score.annotation.Payable;
 
 import java.math.BigInteger;
 
-import static score.Context.newVarDB;
 
 public class IRC3 extends IRC3Basic {
     public static final String TAG = "IRC3";
@@ -24,7 +23,7 @@ public class IRC3 extends IRC3Basic {
     public final VarDB<BigInteger> mintCost = Context.newVarDB(MINT_COST, BigInteger.class);
     public final VarDB<BigInteger> tokenId = Context.newVarDB(TOKEN_ID, BigInteger.class);
     public final VarDB<BigInteger> cap = Context.newVarDB(CAP, BigInteger.class);
-    public final VarDB<Address> admin = newVarDB(ADMIN, Address.class);
+    public final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     public final DictDB<BigInteger, String> tokenURIs = Context.newDictDB(TOKEN_URI, String.class);
 
     public IRC3(String _name, String _symbol, BigInteger _cap, BigInteger _mintCost) {
