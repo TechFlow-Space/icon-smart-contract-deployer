@@ -25,7 +25,8 @@ public class TokenFactory {
     private final VarDB<Address> admin = newVarDB(ADMIN, Address.class);
     private final VarDB<Address> treasury = newVarDB(TREASURY, Address.class);
     private final VarDB<BigInteger> deployFee = newVarDB(DEPLOY_FEE, BigInteger.class);
-    private final IterableDictDB<String, ContentDB> content = new IterableDictDB<>(SCORE_CONTENT, ContentDB.class, String.class, false);
+    private final DictDB<String, byte[]> content = newDictDB(SCORE_CONTENT, byte[].class);
+    private final IterableDictDB<String, ContentDB> contentInfo = new IterableDictDB<>(SCORE_CONTENT_INFO, ContentDB.class, String.class, false);
     private final IterableDictDB<BigInteger, ContractDB> deploymentDetail = new IterableDictDB<>(DEPLOYMENT_DETAIL, ContractDB.class, BigInteger.class, false);
     private final BranchDB<Address, ArrayDB<ContractDB>> deployerDetail = newBranchDB(CONTRACT_DEPLOYER, ContractDB.class);
 
@@ -62,16 +63,17 @@ public class TokenFactory {
     @External
     public void setContractContent(String name, String type, String description, byte[] content, @Optional boolean isUpdate) {
         adminOnly();
-        contractTypeValidate(name);
+        contractTypeValidate(type);
         BigInteger timestamp = BigInteger.valueOf(getBlockTimestamp());
         Address caller = getCaller();
 
         if (!isUpdate) {
-            require(!this.content.keys().contains(name), Message.duplicateContract());
+            require(!this.contentInfo.keys().contains(name), Message.duplicateContract());
         }
 
-        ContentDB contentDB = new ContentDB(name, new String(content), description, timestamp, caller, type);
-        this.content.set(name, contentDB);
+        ContentDB contentDB = new ContentDB(name, description, timestamp, caller, type);
+        this.content.set(name, content);
+        this.contentInfo.set(name, contentDB);
         if (isUpdate) {
             this.ContentUpdated(name, caller);
         } else {
@@ -82,17 +84,17 @@ public class TokenFactory {
     @External(readonly = true)
     public List<Map<String, Object>> getContracts() {
         List<Map<String, Object>> contracts = new ArrayList<>();
-        int size = content.keys().size();
+        int size = contentInfo.keys().size();
         for (int i = 0; i < size; i++) {
-            String key = content.keys().get(i);
-            contracts.add(content.get(key).toObject());
+            String key = contentInfo.keys().get(i);
+            contracts.add(contentInfo.get(key).toObject());
         }
         return contracts;
     }
 
     @External(readonly = true)
     public Map<String, Object> getContractContent(String key) {
-        return this.content.get(key).toObject();
+        return this.contentInfo.get(key).toObject();
     }
 
     @External(readonly = true)
@@ -102,14 +104,14 @@ public class TokenFactory {
 
     @External
     @Payable
-    public void deployContract(String key, Address deployer, byte[] _data) {
+    public void deployContract(String key, Address deployer, @Optional byte[] _data) {
         require(!deployer.equals(ZERO_ADDRESS), Message.zeroAddress());
         require(getPaidValue().equals(this.getDeployFee()), Message.paymentMismatch());
-        require(this.content.keys().contains(key), Message.Not.deployed());
+        require(this.contentInfo.keys().contains(key), Message.Not.deployed());
 
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
-        byte[] content = this.content.get(key).getContent().getBytes();
-        Address contract = deployContract(key, content, _data);
+        byte[] content = this.content.get(key);
+        Address contract = deployContract(key, content, _data == null ? new byte[]{} : _data);
         setScoreOwner(contract, deployer);
 
         ContractDB contractDB = new ContractDB(currentSize, key, deployer, BigInteger.valueOf(getBlockTimestamp()), contract);
@@ -119,7 +121,12 @@ public class TokenFactory {
     }
 
     Address deployContract(String key, byte[] content, byte[] _data) {
-        JsonObject data = unpackAndFetchObject(_data);
+        JsonObject data;
+        if (_data.length > 0) {
+            data = unpackAndFetchObject(_data);
+        } else {
+            data = null;
+        }
         switch (key) {
             case "IRC2":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(), new BigInteger(data.get("decimal").asString()));

@@ -59,7 +59,7 @@ deployJar {
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
-            to = 'cx36e6784042cd2de46a4a30cca4e133206cde2bc7'
+            to = 'cx7bfa060175bb2b55ec6f79b10d0669ab15afac90'
             nid = 0x2
         }
     }

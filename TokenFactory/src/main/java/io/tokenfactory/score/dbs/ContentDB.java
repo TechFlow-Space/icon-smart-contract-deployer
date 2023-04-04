@@ -10,7 +10,6 @@ import java.util.Map;
 public class ContentDB {
 
     private String name;
-    private String content;
     private String description;
     private BigInteger lastUpdated;
     private Address updatedBy;
@@ -19,9 +18,8 @@ public class ContentDB {
     public ContentDB() {
     }
 
-    public ContentDB(String name, String content, String description, BigInteger lastUpdated, Address updatedBy, String type) {
+    public ContentDB(String name, String description, BigInteger lastUpdated, Address updatedBy, String type) {
         this.name = name;
-        this.content = content;
         this.description = description;
         this.lastUpdated = lastUpdated;
         this.updatedBy = updatedBy;
@@ -32,7 +30,6 @@ public class ContentDB {
         ContentDB obj = new ContentDB();
         reader.beginList();
         obj.setName(reader.readString());
-        obj.setContent(reader.readString());
         obj.setDescription(reader.readString());
         obj.setLastUpdated(reader.readBigInteger());
         obj.setUpdatedBy(reader.readAddress());
@@ -42,9 +39,8 @@ public class ContentDB {
     }
 
     public static void writeObject(ObjectWriter w, ContentDB obj) {
-        w.beginList(5);
+        w.beginList(4);
         w.write(obj.name);
-        w.write(obj.content);
         w.write(obj.description);
         w.write(obj.lastUpdated);
         w.write(obj.updatedBy);
@@ -68,14 +64,6 @@ public class ContentDB {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
     }
 
     public String getDescription() {
