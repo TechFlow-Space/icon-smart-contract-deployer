@@ -1,15 +1,15 @@
 package io.contractdeployer.generics.irc3.exception;
 
 
-import static io.contractdeployer.generics.irc3.IRC3.TAG;
+import static io.contractdeployer.generics.irc3.Contsant.TAG;
 
 public class IRC3Exception {
 
     public static String notOwner(){
-        return TAG+" :: Caller is not owner";
+        return TAG+" :: Only owner can perform this action";
     }
 
-    public static String notAdmin() {
+    public static String notAdminOrOwner() {
         return TAG+" :: Only admin/owner can perform this action.";
     }
 
@@ -30,7 +30,7 @@ public class IRC3Exception {
     }
 
     public static String priceMismatch() {
-        return TAG+" :: "+" Price Mismatch.";
+        return TAG+" :: Price Mismatch";
     }
 
 

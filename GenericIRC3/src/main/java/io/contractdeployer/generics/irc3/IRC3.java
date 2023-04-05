@@ -12,14 +12,10 @@ import score.annotation.Payable;
 
 import java.math.BigInteger;
 
+import static io.contractdeployer.generics.irc3.Contsant.*;
 
 public class IRC3 extends IRC3Basic {
-    public static final String TAG = "IRC3";
-    public final String ADMIN="admin";
-    public final String MINT_COST="mint_cost";
-    public final String CAP="cap";
-    public final String TOKEN_URI="token_uri";
-    public final String TOKEN_ID="token_id";
+
     public final VarDB<BigInteger> mintCost = Context.newVarDB(MINT_COST, BigInteger.class);
     public final VarDB<BigInteger> tokenId = Context.newVarDB(TOKEN_ID, BigInteger.class);
     public final VarDB<BigInteger> cap = Context.newVarDB(CAP, BigInteger.class);
@@ -49,7 +45,7 @@ public class IRC3 extends IRC3Basic {
 
     @External
     public void setMintCost(BigInteger _mintCost) {
-        onlyAdmin();
+        onlyAdminOrOwner();
         mintCost.set(_mintCost);
     }
 
@@ -82,10 +78,6 @@ public class IRC3 extends IRC3Basic {
 
     @EventLog
     public void TransferAdmin(Address _oldAmin, Address _newAdmin){}
-    @External
-    public BigInteger totalSupplyOf(){
-        return BigInteger.valueOf(super.totalSupply());
-    }
 
 
     @External
@@ -106,7 +98,8 @@ public class IRC3 extends IRC3Basic {
         Address owner = ownerOf(_tokenId);
         Address caller = Context.getCaller();
         Context.require(owner.equals(caller) || getApproved(_tokenId).equals(caller), IRC3Exception.notApproved());
-
+        tokenId.set(getTokenId().subtract(BigInteger.ONE));
+        tokenURIs.set(getTokenId(), null);
         _burn(_tokenId);
         Burn(caller,_tokenId);
 
@@ -120,9 +113,9 @@ public class IRC3 extends IRC3Basic {
         Context.require(Context.getCaller().equals(Context.getOwner()), IRC3Exception.notOwner());
     }
 
-    private void onlyAdmin() {
+    private void onlyAdminOrOwner() {
         Context.require(Context.getCaller().equals(this.getAdmin())
-                        || Context.getCaller().equals(Context.getOwner()), IRC3Exception.notAdmin());
+                        || Context.getCaller().equals(Context.getOwner()), IRC3Exception.notAdminOrOwner());
     }
 
     @EventLog(indexed = 3)
