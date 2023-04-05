@@ -14,7 +14,7 @@ import java.math.BigInteger;
 
 import static io.contractdeployer.generics.irc3.Contsant.*;
 
-public class IRC3 extends IRC3Basic {
+public class IRC3 extends IRC3Basic  implements InterfaceIRC3{
 
     public final VarDB<BigInteger> mintCost = Context.newVarDB(MINT_COST, BigInteger.class);
     public final VarDB<BigInteger> tokenId = Context.newVarDB(TOKEN_ID, BigInteger.class);
@@ -70,10 +70,10 @@ public class IRC3 extends IRC3Basic {
     }
 
     @External
-    public void setAdmin(Address adminAddress) {
+    public void setAdmin(Address _address) {
         onlyOwner();
-        admin.set(adminAddress);
-        TransferAdmin(Context.getOwner(),adminAddress);
+        admin.set(_address);
+        TransferAdmin(Context.getOwner(),_address);
     }
 
     @EventLog
