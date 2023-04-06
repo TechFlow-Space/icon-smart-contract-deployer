@@ -58,7 +58,7 @@ public class Airdrop implements InterfaceAirdrop {
     }
 
     @External
-    public void airdropIRC2(Address _tokenAddress) {
+    public void airdropToListedUsers(Address _tokenAddress) {
         onlyOwner();
         Context.require(checkMinter(Context.getAddress()), AirdropException.notMinter());
 
@@ -130,7 +130,7 @@ public class Airdrop implements InterfaceAirdrop {
         }
     }
 
-    @EventLog(indexed = 4)
+    @EventLog(indexed = 3)
     public void AirdropToken(Address from, String key, Address to, BigInteger amount) {
     }
 
