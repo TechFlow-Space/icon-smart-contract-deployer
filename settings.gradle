@@ -5,6 +5,15 @@ findProject(":GenericIRC3").projectDir = file("GenericIRC3")
 include 'GenericAirdrop'
 findProject(":GenericAirdrop").projectDir = file("GenericAirdrop")
 
+include 'GenericAirdropIRC2'
+findProject(":GenericAirdropIRC2").projectDir = file("GenericAirdropIRC2")
+
+include 'GenericAirdropIRC3'
+findProject(":GenericAirdropIRC3").projectDir = file("GenericAirdropIRC3")
+
+include 'GenericAirdropIRC31'
+findProject(":GenericAirdropIRC31").projectDir = file("GenericAirdropIRC31")
+
 include 'GenericDAO'
 findProject(":GenericDAO").projectDir = file("GenericDAO")
 
