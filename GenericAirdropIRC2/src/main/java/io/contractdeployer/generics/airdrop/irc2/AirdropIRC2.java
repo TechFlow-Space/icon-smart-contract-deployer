@@ -121,12 +121,6 @@ public class AirdropIRC2 {
         return  BigInteger.valueOf(Context.getBlockTimestamp());
     }
 
-    @External(readonly = true)
-    public void dd(){
-        BigInteger d = BigInteger.valueOf(Context.getBlockTimestamp());
-        System.out.println(d);
-    }
-
     private void emptyUserData(int count){
         for (int i = 0; i < count; i++) {
             userData.pop();

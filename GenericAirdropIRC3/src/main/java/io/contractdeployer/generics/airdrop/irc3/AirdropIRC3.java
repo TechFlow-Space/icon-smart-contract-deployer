@@ -48,7 +48,7 @@ public class AirdropIRC3 {
 
         checkApproval(_tokenAddress, _tokenId);
 
-        Context.call(_tokenAddress, "transferFrom", _from, _recipients, _tokenId); // check the transfer
+        call(_tokenAddress, "transferFrom", _from, _recipients, _tokenId); // check the transfer
         distributedTokens.set(_recipients, _tokenId); // sender ko info is not saved
         IRC3Airdrop(_from, _recipients, _tokenId);
     }
@@ -62,7 +62,7 @@ public class AirdropIRC3 {
         checkApprovalBatch(_tokenAddress, _tokenId);
 
         for (int i = 0; i < count; i++) {
-            Context.call(_tokenAddress, "transferFrom", _from[i], _recipients[i], _tokenId[i]); // check the transfer
+            call(_tokenAddress, "transferFrom", _from[i], _recipients[i], _tokenId[i]); // check the transfer
             distributedTokens.set(_recipients[i], _tokenId[i]); // sender ko info is not saved
             IRC3Airdrop(_from[i], _recipients[i], _tokenId[i]);
         }
@@ -76,7 +76,7 @@ public class AirdropIRC3 {
     }
 
     protected void checkApproval(Address address, BigInteger tokenId){
-        Address approved = Context.call(Address.class, address, "getApproved", tokenId);
+        Address approved = call(Address.class, address, "getApproved", tokenId);
         Address caller = Context.getAddress();
         Context.require(caller.equals(approved), AirdropIRC3Exception.approvalRequired(tokenId));
     }
@@ -85,4 +85,13 @@ public class AirdropIRC3 {
     @EventLog(indexed = 3)
     public void IRC3Airdrop(Address from, Address to, BigInteger tokenId) {
     }
+
+    public void call(Address contract, String method, Object... params) {
+        Context.call(contract, method, params);
+    }
+
+    public <K> K call(Class<K> kClass, Address contract, String method, Object... params) {
+        return Context.call(kClass, contract, method, params);
+    }
+
 }
