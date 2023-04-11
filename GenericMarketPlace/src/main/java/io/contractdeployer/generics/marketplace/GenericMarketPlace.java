@@ -2,7 +2,9 @@ package io.contractdeployer.generics.marketplace;
 
 import io.contractdeployer.generics.marketplace.db.SaleDB;
 
-import score.*;
+import score.Address;
+import score.ArrayDB;
+import score.Context;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -18,13 +20,16 @@ import static io.contractdeployer.generics.marketplace.enums.SaleStatus.*;
 import static io.contractdeployer.generics.marketplace.util.NumUtil.pow;
 import static io.contractdeployer.generics.marketplace.util.StringUtil.bytesToHex;
 import static java.lang.Math.min;
-import static score.Context.*;
+import static score.Context.require;
 
 public class GenericMarketPlace {
 
     public GenericMarketPlace() {
-        countSale.set(BigInteger.ZERO);
-        counter.set(0);
+        if (admin.get()==null){
+            admin.set(Context.getCaller());
+            countSale.set(BigInteger.ZERO);
+            counter.set(0);
+        }
     }
 
     @External(readonly = true)
@@ -36,6 +41,7 @@ public class GenericMarketPlace {
     public void setAdmin(Address _admin) {
         ownerRequired();
         admin.set(_admin);
+        TransferAdminRight(Context.getCaller(),_admin);
     }
 
     @External(readonly = true)
@@ -47,7 +53,9 @@ public class GenericMarketPlace {
     public void setMarketplaceFee(Address scoreAddress, BigInteger fee) {
         adminRequired();
         supportedScoreRequired(scoreAddress);
-        require(BigInteger.ZERO.compareTo(fee) <= 0 && fee.compareTo(BigInteger.valueOf(100).multiply(pow(BigInteger.TEN, 18))) <= 0, Message.Not.feeInRange());
+        require(BigInteger.ZERO.compareTo(fee) <0 &&
+                fee.compareTo(BigInteger.valueOf(100).multiply(pow(BigInteger.TEN, 18))) <= 0,
+                Message.Not.feeInRange());
         genericMarketplaceCut.set(scoreAddress, fee);
     }
 
@@ -75,14 +83,14 @@ public class GenericMarketPlace {
     }
 
     @External
-    public void toggleSettingEnabled(Address score) {
+    public void toggleSellingEnabled(Address score) {
         adminRequired();
         supportedScoreRequired(score);
-        isSettingPriceEnabled.set(score, !isSettingEnabled(score));
+        isSettingPriceEnabled.set(score, !isSellingEnabled(score));
     }
 
     @External(readonly = true)
-    public boolean isSettingEnabled(Address score) {
+    public boolean isSellingEnabled(Address score) {
         supportedScoreRequired(score);
         return isSettingPriceEnabled.getOrDefault(score, false);
     }
@@ -170,14 +178,14 @@ public class GenericMarketPlace {
         require(saleDB.getStatus().equals(FOR_SALE.name()), Message.Not.forSale());
 
         Address nftOwner = getNftOwner(saleId);
-        require(getSetterAddress(saleId).equals(nftOwner), Message.Not.forSale());
+        require(getSellerAddress(saleId).equals(nftOwner), Message.Not.forSale());
 
         return genericPriceDb.get(saleId);
     }
 
     void  validateSale(Address score, Address owner, BigInteger rate){
         require(rate.compareTo(BigInteger.ZERO) > 0, Message.greaterThanZero(Price));
-        require(isSettingEnabled(score), Message.Not.enabled(Selling));
+        require(isSellingEnabled(score), Message.Not.enabled(Selling));
         require(operatorIsApprovedForAll(score, owner, Context.getAddress()), Message.Not.approved());
     }
 
@@ -185,8 +193,8 @@ public class GenericMarketPlace {
     public void changeRate(BigInteger saleId, BigInteger rate){
         Address owner = Context.getCaller();
         SaleDB saleDB = sales.get(saleId);
-        require(saleDB.getOwner().equals(owner), Message.Not.nftOwner());
         require(saleDB!=null, Message.Not.found(Sale));
+        require(saleDB.getOwner().equals(owner), Message.Not.nftOwner());
         require(saleDB.getStatus().equals(FOR_SALE.name()), Message.Not.forSale());
         validateSale(saleDB.getScore(), owner, rate);
         saleDB.setPrice(rate);
@@ -199,7 +207,7 @@ public class GenericMarketPlace {
     }
 
     @External(readonly = true)
-    public Address getSetterAddress(BigInteger saleId) {
+    public Address getSellerAddress(BigInteger saleId) {
         SaleDB saleDB = sales.get(saleId);
         require(saleDB!=null, Message.Not.found(Sale));
         return genericSetterAddress.getOrDefault(saleId, null);
@@ -215,7 +223,7 @@ public class GenericMarketPlace {
         List<SaleDB> dataCollection = new ArrayList<>();
 
         if (order.equals(desc)) {
-            for (int i = maxCount - 1; i > offset; i--) {
+            for (int i = maxCount - 1; i >= offset; i--) {
                 dataCollection.add(sales.get(availableSalesOfScore.get(i)));
             }
         } else {
@@ -342,7 +350,7 @@ public class GenericMarketPlace {
         Address owner = getNftOwner(saleId);
         Address buyer = Context.getCaller();
         require(!owner.equals(buyer), Message.Found.own());
-        require(owner.equals(getSetterAddress(saleId)), Message.Not.currentOwner());
+        require(owner.equals(getSellerAddress(saleId)), Message.Not.currentOwner());
         require(operatorIsApprovedForAll(saleDB.getScore(), saleDB.getOwner(), Context.getAddress()), Message.Not.approved());
 
         BigInteger marketCut = genericMarketplaceCut.get(saleDB.getScore()).multiply(paidAmount).divide(BigInteger.valueOf(100)).divide(pow(BigInteger.TEN, 18)); // (100 * 10 ** 18)
@@ -412,5 +420,8 @@ public class GenericMarketPlace {
 
     @EventLog(indexed = 1)
     public void SaleRemoved(BigInteger saleId) {}
+
+    @EventLog(indexed = 2)
+    public void TransferAdminRight(Address _oldAdmin,Address _newAdmin){}
 
 }
