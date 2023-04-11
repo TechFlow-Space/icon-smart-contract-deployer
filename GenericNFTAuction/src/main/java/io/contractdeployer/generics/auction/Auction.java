@@ -1,18 +1,25 @@
 package io.contractdeployer.generics.auction;
 
 import score.Address;
+import score.Context;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
 
+import static io.contractdeployer.generics.auction.Constant.TAG;
 import static io.contractdeployer.generics.auction.Constant.ZERO_ADDRESS;
 import static io.contractdeployer.generics.auction.Vars.auction;
 import static io.contractdeployer.generics.auction.Vars.currentAuctionIndex;
 import static score.Context.*;
 
 public class Auction {
+
+    @External(readonly = true)
+    public String name(){
+        return TAG;
+    }
 
     @External(readonly = true)
     public BigInteger getCurrentIndex() {
@@ -57,6 +64,7 @@ public class Auction {
 
         if (!currentIndex.equals(BigInteger.ZERO)) {
             AuctionDB currentAuction = auction.get(currentIndex);
+            // use case of end auction time
             require(currentAuction.getTransferred() || currentAuction.getAuctionEndTime().compareTo(now()) > 0, "Auction Ongoing");
         }
 
@@ -83,7 +91,12 @@ public class Auction {
         require(!_from.equals(auctionDB.getAuctionCreator()), "Auction Creator Not Allowed To Bid");
         require(!auctionDB.getTransferred() || !auctionDB.getNoParticipation() || now().compareTo(auctionDB.getAuctionEndTime()) < 0, "Auction Ended");
         require(value.compareTo(auctionDB.getMinimumBid()) > 0 &&
-                value.compareTo(auctionDB.getHighestBid()) > 0, "Invalid Bid Value");
+                value.compareTo(auctionDB.getHighestBid()) > 0, "Bid should be greater than zero/previous bidder");
+
+        // transfer to previous bidder
+        if (!auctionDB.getHighestBidder().equals(ZERO_ADDRESS) && !auctionDB.getHighestBid().equals(BigInteger.ZERO)){
+            transferFromScore(auctionDB.getHighestBidder(),auctionDB.getHighestBid());
+        }
 
         auctionDB.setHighestBid(value);
         auctionDB.setHighestBidder(_from);
@@ -95,29 +108,39 @@ public class Auction {
     public void endAuction(BigInteger auctionId) {
         AuctionDB auctionDB = auction.get(auctionId);
         require(auctionDB != null, "Invalid Auction Id");
+        require(!auctionDB.getTransferred(),"Auction Ended for auction id "+ auctionId );
         require(getCaller().equals(auctionDB.getAuctionCreator()), "OnlyAuctionCreator");
         Address contractAddress = auctionDB.getContractAddress();
         Address highestBidder = auctionDB.getHighestBidder();
         BigInteger nftId = auctionDB.getNftId();
 
         if (auctionDB.getHighestBidder().equals(ZERO_ADDRESS)) {
+
             transferToBidder(contractAddress, auctionDB.getAuctionCreator(), nftId);
             auctionDB.setNoParticipation(true);
+            AuctionCompleted(auctionId, auctionDB.getAuctionCreator(),contractAddress, nftId);
         } else {
             transferToBidder(contractAddress, highestBidder, nftId);
+            AuctionCompleted(auctionId, auctionDB.getHighestBidder(), contractAddress,nftId);
         }
 
         auctionDB.setTransferred(true);
         auctionDB.setAuctionEndTime(now());
         auction.set(auctionId, auctionDB);
-        AuctionCompleted(auctionId, contractAddress, auctionDB.getHighestBidder(), nftId);
     }
 
     @External
     public void transferToTreasury(Address treasury) {
         require(getCaller().equals(getOwner()), "Owner Only");
         BigInteger balance = getBalance(getAddress());
-        transfer(treasury, balance);
+
+        transferFromScore(treasury, balance);
+
+        TransferToTreasury(treasury,balance);
+    }
+
+    void transferFromScore(Address treasury,BigInteger balance){
+        Context.transfer(treasury,balance);
     }
 
     void transferToContract(Address contractAddress, Address _from, BigInteger _tokenId) {
@@ -144,6 +167,10 @@ public class Auction {
 
     @EventLog(indexed = 2)
     public void AuctionCreated(BigInteger index, Address creator, Address contractAddress, BigInteger nftId) {
+    }
+
+    @EventLog(indexed = 2)
+    public void TransferToTreasury(Address treasury,BigInteger amount) {
     }
 
     @EventLog(indexed = 2)
