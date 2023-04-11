@@ -5,6 +5,7 @@ import io.contractdeployer.generics.irc31.exception.IRC31Exception;
 import score.Address;
 import score.Context;
 import score.VarDB;
+import score.annotation.EventLog;
 import score.annotation.External;
 
 import java.math.BigInteger;
@@ -78,11 +79,15 @@ public class IRC31 extends IRC31Basic implements InterfaceIRC31{
     }
 
     @External
-    public void setAdmin(Address adminAddress) {
+    public void setAdmin(Address _address) {
         this.onlyOwner();
-        admin.set(adminAddress);
+        admin.set(_address);
+        TransferAdmin(Context.getOwner(),_address);
+
     }
 
+    @EventLog
+    public void TransferAdmin(Address _oldAmin, Address _newAdmin){}
 
     @External
     public void mint(Address _to, BigInteger _id, BigInteger _amount,String _uri) {
