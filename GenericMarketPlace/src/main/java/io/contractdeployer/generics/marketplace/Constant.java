@@ -1,6 +1,6 @@
 package io.contractdeployer.generics.marketplace;
 
-import score.Address;
+import java.math.BigInteger;
 
 public class Constant {
 
@@ -20,7 +20,7 @@ public class Constant {
     static final String SCORE_AVAILABLE_SALES = "score_available_sales";
     static final String OWNERS_NFT_SALE_ID = "owners_nft_sale_id";
     static final String COUNTER = "counter";
-
+    static final BigInteger ICX = BigInteger.TEN.pow(18);
 
     //Method names
     static final String isApprovedForAll = "isApprovedForAll";

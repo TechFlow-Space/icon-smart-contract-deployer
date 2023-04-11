@@ -1,22 +1,21 @@
 package io.contractdeployer.generics.marketplace.util;
 
-import static score.Context.revert;
 
 public class StringUtil {
 
-    public static String[] stringSplit(String string, Character regex){
-        if(string.length()==0){
+    public static String[] stringSplit(String string, Character regex) {
+        if (string.length() == 0) {
             return new String[0];
         }
         String[] ret = new String[countArrEle(string, regex)];
         int arrCount = 0;
         StringBuilder stringBuilder = new StringBuilder();
-        for (int i=0; i<string.length(); i++){
-            if(string.charAt(i)==regex){
+        for (int i = 0; i < string.length(); i++) {
+            if (string.charAt(i) == regex) {
                 ret[arrCount] = stringBuilder.toString();
                 stringBuilder = new StringBuilder();
                 arrCount++;
-            }else{
+            } else {
                 stringBuilder.append(string.charAt(i));
             }
 
@@ -25,14 +24,14 @@ public class StringUtil {
         return ret;
     }
 
-    public static int countArrEle(String string, Character regex){
+    public static int countArrEle(String string, Character regex) {
         int count = 0;
         for (int i = 0; i < string.length(); i++) {
             if (string.charAt(i) == regex) {
                 count++;
             }
         }
-        return count+1;
+        return count + 1;
     }
 
     public static String bytesToHex(byte[] bytes) {
