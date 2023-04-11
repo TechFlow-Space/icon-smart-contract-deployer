@@ -39,7 +39,7 @@ public class IRC2 extends IRC2Basic {
     public void mint(Address _to,BigInteger _amount) {
         Address caller = Context.getCaller();
         boolean mintCondition  = caller.equals(Context.getOwner())  || caller.equals(getMinter());
-        Context.require(mintCondition,TAG+" :: Only owner can perform this action.");
+        Context.require(mintCondition,TAG+" :: Only owner/minter can perform this action.");
 
         _mint(_to,_amount);
         Mint(caller,_to,_amount);
@@ -64,7 +64,7 @@ public class IRC2 extends IRC2Basic {
 
     @EventLog(indexed = 2)
     public void Burn(Address _from, BigInteger _amount){}
-//
+
     protected void onlyOwner(){
         Address caller = Context.getCaller();
         Address owner = Context.getOwner();
