@@ -54,7 +54,7 @@ public class GenericMarketPlace {
         supportedScoreRequired(scoreAddress);
         require(BigInteger.ZERO.compareTo(fee) < 0 &&
                         fee.compareTo(BigInteger.valueOf(100).multiply(ICX)) <= 0,
-                Message.Not.feeInRange());
+                MarketPlaceException.Not.feeInRange());
         genericMarketplaceCut.set(scoreAddress, fee);
     }
 
@@ -67,7 +67,7 @@ public class GenericMarketPlace {
     public void addScore(Address score) {
         adminRequired();
         validateScore(score);
-        require(!scores.contains(score), Message.Found.score());
+        require(!scores.contains(score), MarketPlaceException.scoreAlreadyExist());
         scores.add(score);
     }
 
@@ -114,7 +114,7 @@ public class GenericMarketPlace {
         validateSale(score, owner, rate);
         count = count == 0 ? 1 : count;
         BigInteger ownersBalance = getBalanceOfOwner(owner, score, nftId);
-        require(ownersBalance.intValue() >= count, Message.Not.enough());
+        require(ownersBalance.intValue() >= count, MarketPlaceException.Not.enough());
         String ownerScore = getOwnerPrefix(owner, score);
         BigInteger saleId = ownersNftSaleId.at(ownerScore).get(nftId);
         SaleDB saleDB;
@@ -131,7 +131,7 @@ public class GenericMarketPlace {
             ownersNftSaleId.at(ownerScore).set(nftId, saleId);
         } else {
             saleDB = sales.get(saleId);
-            require(saleDB.getStatus().equals(FOR_SALE.name()), Message.Not.active());
+            require(saleDB.getStatus().equals(FOR_SALE.name()), MarketPlaceException.Not.active());
             saleDB.setPrice(rate);
             saleDB.setCount(count);
         }
@@ -144,11 +144,11 @@ public class GenericMarketPlace {
     @External(readonly = true)
     public BigInteger getRate(BigInteger saleId) {
         SaleDB saleDB = sales.get(saleId);
-        require(saleDB != null, Message.Not.found(Sale));
-        require(saleDB.getStatus().equals(FOR_SALE.name()), Message.Not.forSale());
+        require(saleDB != null, MarketPlaceException.Not.found(Sale));
+        require(saleDB.getStatus().equals(FOR_SALE.name()), MarketPlaceException.Not.forSale());
 
         Address nftOwner = getNftOwner(saleId);
-        require(getSellerAddress(saleId).equals(nftOwner), Message.Not.forSale());
+        require(getSellerAddress(saleId).equals(nftOwner), MarketPlaceException.Not.forSale());
 
         return genericPriceDb.get(saleId);
     }
@@ -157,9 +157,9 @@ public class GenericMarketPlace {
     public void changeRate(BigInteger saleId, BigInteger rate) {
         Address owner = Context.getCaller();
         SaleDB saleDB = sales.get(saleId);
-        require(saleDB != null, Message.Not.found(Sale));
-        require(saleDB.getOwner().equals(owner), Message.Not.nftOwner());
-        require(saleDB.getStatus().equals(FOR_SALE.name()), Message.Not.forSale());
+        require(saleDB != null, MarketPlaceException.Not.found(Sale));
+        require(saleDB.getOwner().equals(owner), MarketPlaceException.Not.nftOwner());
+        require(saleDB.getStatus().equals(FOR_SALE.name()), MarketPlaceException.Not.forSale());
         validateSale(saleDB.getScore(), owner, rate);
         saleDB.setPrice(rate);
         sales.set(saleId, saleDB);
@@ -169,15 +169,15 @@ public class GenericMarketPlace {
     @External(readonly = true)
     public Address getSellerAddress(BigInteger saleId) {
         SaleDB saleDB = sales.get(saleId);
-        require(saleDB != null, Message.Not.found(Sale));
+        require(saleDB != null, MarketPlaceException.Not.found(Sale));
         return genericSetterAddress.getOrDefault(saleId, null);
     }
 
     @External(readonly = true)
     public List<SaleDB> getScoreAvailableSales(Address score, int limit, int offset, String order) {
-        require(limit <= 10, Message.maxTenAllowed());
+        require(limit <= 10, MarketPlaceException.maxTenAllowed());
         ArrayDB<BigInteger> availableSalesOfScore = scoreAvailableSales.at(score);
-        require(offset <= availableSalesOfScore.size(), Message.Not.historyAvailable(offset));
+        require(offset <= availableSalesOfScore.size(), MarketPlaceException.Not.historyAvailable(offset));
 
         int maxCount = min(offset + limit, availableSalesOfScore.size());
         List<SaleDB> dataCollection = new ArrayList<>();
@@ -201,7 +201,7 @@ public class GenericMarketPlace {
 
     @External(readonly = true)
     public List<SaleDB> getPutOnSaleHistory(Address score, BigInteger nftId, int limit, int offset, String order) {
-        require(limit <= 10, Message.maxTenAllowed());
+        require(limit <= 10, MarketPlaceException.maxTenAllowed());
 
         ArrayDB<BigInteger> salesHistory = genericNftSalesHistory.at(getNftPrefix(nftId, score));
         List<SaleDB> saleList = new ArrayList<>();
@@ -277,8 +277,8 @@ public class GenericMarketPlace {
     @External
     public void removeFromSale(BigInteger saleId) {
         SaleDB saleDB = sales.get(saleId);
-        require(saleDB != null, Message.Not.found(Sale));
-        require(Context.getCaller().equals(saleDB.getOwner()), Message.Not.nftOwner());
+        require(saleDB != null, MarketPlaceException.Not.found(Sale));
+        require(Context.getCaller().equals(saleDB.getOwner()), MarketPlaceException.Not.nftOwner());
         saleDB.setStatus(CANCELED.name());
         sales.set(saleId, saleDB);
         genericPriceDb.set(saleId, null);
@@ -292,7 +292,7 @@ public class GenericMarketPlace {
         //Transfer funds to treasury
         adminRequired();
         BigInteger balance = Context.getBalance(Context.getAddress());
-        require(balance.compareTo(amt) >= 0, Message.Not.enoughBalance());
+        require(balance.compareTo(amt) >= 0, MarketPlaceException.Not.enoughBalance());
         Context.transfer(address, amt);
     }
 
@@ -300,18 +300,18 @@ public class GenericMarketPlace {
     @External
     public void buy(BigInteger saleId) {
         SaleDB saleDB = sales.get(saleId);
-        require(saleDB != null, Message.Not.found(Sale));
-        require(isBuyingEnabled(saleDB.getScore()), Message.Not.enabled(Buying));
+        require(saleDB != null, MarketPlaceException.Not.found(Sale));
+        require(isBuyingEnabled(saleDB.getScore()), MarketPlaceException.Not.enabled(Buying));
         validateBalance(saleDB);
         BigInteger price = saleDB.getPrice().multiply(BigInteger.valueOf(saleDB.getCount()));
         BigInteger paidAmount = getPaidAmount();
-        require(paidAmount.equals(price), Message.priceMisMatch(price, paidAmount));
+        require(paidAmount.equals(price), MarketPlaceException.priceMisMatch(price, paidAmount));
 
         Address owner = getNftOwner(saleId);
         Address buyer = Context.getCaller();
-        require(!owner.equals(buyer), Message.Found.own());
-        require(owner.equals(getSellerAddress(saleId)), Message.Not.currentOwner());
-        require(operatorIsApprovedForAll(saleDB.getScore(), saleDB.getOwner(), Context.getAddress()), Message.Not.approved());
+        require(!owner.equals(buyer), MarketPlaceException.own());
+        require(owner.equals(getSellerAddress(saleId)), MarketPlaceException.Not.currentOwner());
+        require(operatorIsApprovedForAll(saleDB.getScore(), saleDB.getOwner(), Context.getAddress()), MarketPlaceException.Not.approved());
 
         BigInteger marketCut = genericMarketplaceCut.get(saleDB.getScore()).
                 multiply(paidAmount).divide(BigInteger.valueOf(100)).divide(ICX); // (100 * 10 ** 18)
@@ -349,9 +349,9 @@ public class GenericMarketPlace {
 
 
     void validateSale(Address score, Address owner, BigInteger rate) {
-        require(rate.compareTo(BigInteger.ZERO) > 0, Message.greaterThanZero(Price));
-        require(isSellingEnabled(score), Message.Not.enabled(Selling));
-        require(operatorIsApprovedForAll(score, owner, Context.getAddress()), Message.Not.approved());
+        require(rate.compareTo(BigInteger.ZERO) > 0, MarketPlaceException.greaterThanZero(Price));
+        require(isSellingEnabled(score), MarketPlaceException.Not.enabled(Selling));
+        require(operatorIsApprovedForAll(score, owner, Context.getAddress()), MarketPlaceException.Not.approved());
     }
 
     public String getOwnerPrefix(Address owner, Address score) {
@@ -364,7 +364,7 @@ public class GenericMarketPlace {
 
     Address getNftOwner(BigInteger saleId) {
         SaleDB saleDB = sales.get(saleId);
-        require(saleDB != null, Message.Not.found(Sale));
+        require(saleDB != null, MarketPlaceException.Not.found(Sale));
         return saleDB.getOwner();
     }
 
@@ -385,7 +385,7 @@ public class GenericMarketPlace {
 
     void validateBalance(SaleDB saleDB) {
         BigInteger balance = getBalanceOfOwner(saleDB.getOwner(), saleDB.getScore(), saleDB.getNftId());
-        require(balance.compareTo(BigInteger.valueOf(saleDB.getCount())) >= 0, Message.Not.enoughBalance());
+        require(balance.compareTo(BigInteger.valueOf(saleDB.getCount())) >= 0, MarketPlaceException.Not.enoughBalance());
     }
 
     BigInteger getPaidAmount() {
@@ -401,20 +401,20 @@ public class GenericMarketPlace {
     }
 
     private void validateScore(Address score) {
-        require(score.isContract(), Message.Invalid.score());
+        require(score.isContract(), MarketPlaceException.Invalid.score());
     }
 
     private void supportedScoreRequired(Address score) {
-        require(scores.contains(score), Message.Not.supportedScore(score));
+        require(scores.contains(score), MarketPlaceException.Not.supportedScore(score));
     }
 
     private void ownerRequired() {
-        require(Context.getCaller().equals(Context.getOwner()), Message.Not.owner());
+        require(Context.getCaller().equals(Context.getOwner()), MarketPlaceException.Not.owner());
     }
 
     void adminRequired() {
         Address _admin = admin.get();
-        require(Context.getCaller().equals(_admin), Message.Not.admin(_admin));
+        require(Context.getCaller().equals(_admin), MarketPlaceException.Not.admin(_admin));
     }
 
     String getTransactionHash() {

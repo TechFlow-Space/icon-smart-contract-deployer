@@ -1,6 +1,6 @@
 package io.contractdeployer.generics.marketplace.util;
 
-import io.contractdeployer.generics.marketplace.Message;
+import io.contractdeployer.generics.marketplace.MarketPlaceException;
 import score.*;
 
 public class CustomEnumerableSet<A, V> {
@@ -57,7 +57,7 @@ public class CustomEnumerableSet<A, V> {
                 baseIndexes.at(base).set(lastValue, valueIndex);
             }
         }else{
-            throw new UserRevertedException(Message.Not.forSale());
+            throw new UserRevertedException(MarketPlaceException.Not.forSale());
         }
     }
 }

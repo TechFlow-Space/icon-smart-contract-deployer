@@ -6,19 +6,18 @@ import java.math.BigInteger;
 
 import static io.contractdeployer.generics.marketplace.Constant.TAG;
 
-public class Message {
+public class MarketPlaceException {
     public static String priceMisMatch(BigInteger expected, BigInteger provided) {
         return TAG+" :: Price of NFT:" + expected + ". Amount sent: " + provided;
     }
 
-    public static class Found{
-        public static String score() {
-            return "score found";
-        }
-        public static String own() {
-            return TAG+" :: Cannot buy own NFT.";
-        }
+    public static String scoreAlreadyExist() {
+        return  TAG + " :: score found";
     }
+    public static String own() {
+        return TAG+" :: Cannot buy own NFT.";
+    }
+   
 
     public static class Not{
         public static String found(String type) {

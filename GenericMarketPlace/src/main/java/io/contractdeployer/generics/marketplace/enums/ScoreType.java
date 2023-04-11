@@ -1,6 +1,6 @@
 package io.contractdeployer.generics.marketplace.enums;
 
-import io.contractdeployer.generics.marketplace.Message;
+import io.contractdeployer.generics.marketplace.MarketPlaceException;
 import score.UserRevertedException;
 
 public enum ScoreType {
@@ -13,7 +13,7 @@ public enum ScoreType {
             case "ID_COUNT":
                 break;
             default:
-                throw new UserRevertedException(Message.Invalid.currency());
+                throw new UserRevertedException(MarketPlaceException.Invalid.currency());
         }
     }
 }

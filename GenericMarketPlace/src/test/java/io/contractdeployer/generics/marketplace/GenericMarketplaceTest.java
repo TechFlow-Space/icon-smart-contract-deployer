@@ -29,16 +29,16 @@ public class GenericMarketplaceTest extends TestBase {
     private static final Account nftOwner = sm.createAccount();
     private static Score score;
     private static GenericMarketPlace spyScore;
-    private static Score gkScore;
-    private static Score newScore;
+    private final Account gkScore = Account.newScoreAccount(0);
+    private final Account newScore = Account.newScoreAccount(1);
 
     @BeforeEach
     public void setup() throws Exception {
-        gkScore = sm.deploy(owner, DummyScore.class);
-        newScore = sm.deploy(owner, DummyScore.class);
         score = sm.deploy(owner, GenericMarketPlace.class);
         spyScore = (GenericMarketPlace) spy(score.getInstance());
         score.setInstance(spyScore);
+
+        // configs
         score.invoke(owner, "setAdmin", admin.getAddress());
         score.invoke(admin, "addScore", gkScore.getAddress());
     }
@@ -47,20 +47,20 @@ public class GenericMarketplaceTest extends TestBase {
     void testBuyingDisabled(){
         assertEquals(false, score.call("isBuyingEnabled", gkScore.getAddress()));
         Executable call = () -> score.invoke(sm.createAccount(), "toggleBuyingEnabled", gkScore.getAddress());
-        expectErrorMessage(call, Message.Not.admin(admin.getAddress()));
+        expectErrorMessage(call, MarketPlaceException.Not.admin(admin.getAddress()));
 
         score.invoke(admin, "toggleBuyingEnabled", gkScore.getAddress());
         assertEquals(true, score.call("isBuyingEnabled", gkScore.getAddress()));
     }
 
     @Test
-    void testSettingDisabled(){
-        assertEquals(false, score.call("isSettingEnabled", gkScore.getAddress()));
-        Executable call = () -> score.invoke(sm.createAccount(), "toggleSettingEnabled", gkScore.getAddress());
-        expectErrorMessage(call, Message.Not.admin(admin.getAddress()));
+    void testSellingDisabled(){
+        assertEquals(false, score.call("isSellingEnabled", gkScore.getAddress()));
+        Executable call = () -> score.invoke(sm.createAccount(), "toggleSellingEnabled", gkScore.getAddress());
+        expectErrorMessage(call, MarketPlaceException.Not.admin(admin.getAddress()));
 
-        score.invoke(admin, "toggleSettingEnabled", gkScore.getAddress());
-        assertEquals(true, score.call("isSettingEnabled", gkScore.getAddress()));
+        score.invoke(admin, "toggleSellingEnabled", gkScore.getAddress());
+        assertEquals(true, score.call("isSellingEnabled", gkScore.getAddress()));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class GenericMarketplaceTest extends TestBase {
         ArrayList<Address> addresses = (ArrayList<Address>) score.call("getScores");
         assertEquals(addresses.size(), 1);
         Executable call = () -> score.invoke(sm.createAccount(), "addScore", newScore.getAddress());
-        expectErrorMessage(call, Message.Not.admin(admin.getAddress()));
+        expectErrorMessage(call, MarketPlaceException.Not.admin(admin.getAddress()));
 
         score.invoke(admin, "addScore", newScore.getAddress());
         assertEquals(newScore.getAddress(), ((ArrayList<Address>)score.call("getScores")).get(1));
@@ -77,13 +77,16 @@ public class GenericMarketplaceTest extends TestBase {
     @Test
     void testMarketPlaceFee(){
         Executable call = () -> score.invoke(sm.createAccount(), "setMarketplaceFee", gkScore.getAddress(), BigInteger.valueOf(5));
-        expectErrorMessage(call, Message.Not.admin(admin.getAddress()));
+        expectErrorMessage(call, MarketPlaceException.Not.admin(admin.getAddress()));
 
         call = () -> score.invoke(admin, "setMarketplaceFee", gkScore.getAddress(), BigInteger.valueOf(-1));
-        expectErrorMessage(call, Message.Not.feeInRange());
+        expectErrorMessage(call, MarketPlaceException.Not.feeInRange());
+
+        call = () -> score.invoke(admin, "setMarketplaceFee", gkScore.getAddress(), BigInteger.valueOf(0));
+        expectErrorMessage(call, MarketPlaceException.Not.feeInRange());
 
         call = () -> score.invoke(admin, "setMarketplaceFee", gkScore.getAddress(), BigInteger.valueOf(101).multiply(ICX));
-        expectErrorMessage(call, Message.Not.feeInRange());
+        expectErrorMessage(call, MarketPlaceException.Not.feeInRange());
 
         score.invoke(admin, "setMarketplaceFee", gkScore.getAddress(), BigInteger.TWO.multiply(ICX));
         assertEquals(BigInteger.TWO.multiply(ICX), score.call("getMarketplaceFee", gkScore.getAddress()));
@@ -93,41 +96,42 @@ public class GenericMarketplaceTest extends TestBase {
     void testSetPrice(){
         BigInteger price = BigInteger.valueOf(300).multiply(ICX);
         Executable call = () -> score.invoke(owner, "setPrice", gkScore.getAddress(), BigInteger.ZERO, BigInteger.ZERO, 5);
-        expectErrorMessage(call, Message.greaterThanZero("Price"));
+        expectErrorMessage(call, MarketPlaceException.greaterThanZero("Price"));
 
         call = () -> score.invoke(nftOwner, "setPrice", gkScore.getAddress(), price, BigInteger.ONE, 5);
-        expectErrorMessage(call, Message.Not.enabled("Selling"));
+        expectErrorMessage(call, MarketPlaceException.Not.enabled("Selling"));
 
-        score.invoke(admin, "toggleSettingEnabled", gkScore.getAddress());
-        assertEquals(true, score.call("isSettingEnabled", gkScore.getAddress()));
+        score.invoke(admin, "toggleSellingEnabled", gkScore.getAddress());
+        assertEquals(true, score.call("isSellingEnabled", gkScore.getAddress()));
 
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(any());
         doReturn(false).when(spyScore).operatorIsApprovedForAll(gkScore.getAddress(), nftOwner.getAddress(), score.getAddress());
         call = () ->score.invoke(nftOwner, "setPrice", gkScore.getAddress(), price, BigInteger.ONE, 5);
-        expectErrorMessage(call, Message.Not.approved());
+        expectErrorMessage(call, MarketPlaceException.Not.approved());
 
         doReturn(true).when(spyScore).operatorIsApprovedForAll(any(), any(), any());
         doReturn(BigInteger.valueOf(10)).when(spyScore).getBalanceOfOwner(any(), any(), any());
         call = () ->score.invoke(owner, "setPrice", gkScore.getAddress(), price, BigInteger.ONE, 11);
-        expectErrorMessage(call, Message.Not.enough());
+        expectErrorMessage(call, MarketPlaceException.Not.enough());
 
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(any());
         score.invoke(nftOwner, "setPrice", gkScore.getAddress(), price, BigInteger.ONE, 5);
 
         assertEquals(price, score.call("getRate", BigInteger.ONE));
 
-        List<SaleDB> history = (List<SaleDB>) score.call("getPutOnSaleHistory", gkScore.getAddress(), BigInteger.ONE, 10, 0, "asc");
+        List<SaleDB> history = (List<SaleDB>) score.call("getPutOnSaleHistory", gkScore.getAddress(),
+                BigInteger.ONE, 10, 0, "asc");
         assertEquals(nftOwner.getAddress(), history.get(0).getOwner());
 
         call = () ->score.invoke(nftOwner, "getRate", BigInteger.TWO);
-        expectErrorMessage(call, Message.Not.found("Sale"));
+        expectErrorMessage(call, MarketPlaceException.Not.found("Sale"));
     }
 
     @Test
     void testRemoveFromSale(){
         BigInteger saleId=BigInteger.ONE;
         BigInteger price = BigInteger.valueOf(300).multiply(ICX);
-        score.invoke(admin, "toggleSettingEnabled", gkScore.getAddress());
+        score.invoke(admin, "toggleSellingEnabled", gkScore.getAddress());
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(saleId);
         doReturn(true).when(spyScore).operatorIsApprovedForAll(gkScore.getAddress(), nftOwner.getAddress(), score.getAddress());
         doReturn(BigInteger.valueOf(10)).when(spyScore).getBalanceOfOwner(any(), any(), any());
@@ -135,12 +139,12 @@ public class GenericMarketplaceTest extends TestBase {
 
         doReturn(sm.createAccount().getAddress()).when(spyScore).getNftOwner(gkScore.getAddress(), BigInteger.ONE);
         Executable call = () -> score.invoke(owner, "removeFromSale", saleId);
-        expectErrorMessage(call, Message.Not.nftOwner());
+        expectErrorMessage(call, MarketPlaceException.Not.nftOwner());
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(gkScore.getAddress(), BigInteger.ONE);
         score.invoke(nftOwner, "removeFromSale", saleId);
 
         call = () -> score.invoke(nftOwner, "getRate", BigInteger.TWO);
-        expectErrorMessage(call, Message.Not.found("Sale"));
+        expectErrorMessage(call, MarketPlaceException.Not.found("Sale"));
     }
 
     @Test
@@ -149,7 +153,7 @@ public class GenericMarketplaceTest extends TestBase {
         Account buyer = sm.createAccount();
         buyer.addBalance("ICX", BigInteger.valueOf(10000).multiply(ICX));
         Executable call = () -> score.invoke(buyer, "buy", saleId);
-        expectErrorMessage(call,  Message.Not.found("Sale"));
+        expectErrorMessage(call,  MarketPlaceException.Not.found("Sale"));
 
         int count = 5;
         BigInteger price = BigInteger.valueOf(30).multiply(ICX);
@@ -159,25 +163,25 @@ public class GenericMarketplaceTest extends TestBase {
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(saleId);
         doReturn(true).when(spyScore).operatorIsApprovedForAll(gkScore.getAddress(), nftOwner.getAddress(), score.getAddress());
         doReturn(BigInteger.valueOf(10)).when(spyScore).getBalanceOfOwner(any(), any(), any());
-        score.invoke(admin, "toggleSettingEnabled", gkScore.getAddress());
+        score.invoke(admin, "toggleSellingEnabled", gkScore.getAddress());
         score.invoke(nftOwner, "setPrice", gkScore.getAddress(), price, BigInteger.ZERO, count);
         final BigInteger correctSaleId = BigInteger.ONE;
         call = () -> score.invoke(buyer, "buy", correctSaleId);
-        expectErrorMessage(call,  Message.Not.enabled("Buying"));
+        expectErrorMessage(call,  MarketPlaceException.Not.enabled("Buying"));
 
         score.invoke(admin, "toggleBuyingEnabled", gkScore.getAddress());
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(gkScore.getAddress(), BigInteger.ONE);
         call = () -> score.invoke(buyer, "buy", correctSaleId);
-        expectErrorMessage(call,  Message.priceMisMatch(totalPrice, value));
+        expectErrorMessage(call,  MarketPlaceException.priceMisMatch(totalPrice, value));
 
 
         doReturn(totalPrice).when(spyScore).getPaidAmount();
         call = () -> score.invoke(nftOwner, "buy", correctSaleId);
-        expectErrorMessage(call,  Message.Found.own());
+        expectErrorMessage(call,  MarketPlaceException.own());
 
         doReturn(false).when(spyScore).operatorIsApprovedForAll(any(), any(), any());
         call = () -> score.invoke(buyer, "buy", correctSaleId);
-        expectErrorMessage(call,  Message.Not.approved());
+        expectErrorMessage(call,  MarketPlaceException.Not.approved());
 
         score.invoke(admin, "setMarketplaceFee", gkScore.getAddress(), BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 17)));
         doReturn(true).when(spyScore).operatorIsApprovedForAll(any(), any(), any());
@@ -191,14 +195,14 @@ public class GenericMarketplaceTest extends TestBase {
     @Test
     void testSetPriceWithNftId(){
         BigInteger price = BigInteger.valueOf(300).multiply(ICX);
-        score.invoke(admin, "toggleSettingEnabled", gkScore.getAddress());
+        score.invoke(admin, "toggleSellingEnabled", gkScore.getAddress());
 
         doReturn(true).when(spyScore).operatorIsApprovedForAll(any(), any(), any());
         doReturn(BigInteger.valueOf(10)).when(spyScore).getBalanceOfOwner(nftOwner.getAddress(), gkScore.getAddress(), BigInteger.valueOf(5));
         Account notOwner = sm.createAccount();
         doReturn(BigInteger.valueOf(2)).when(spyScore).getBalanceOfOwner(notOwner.getAddress(), gkScore.getAddress(), BigInteger.valueOf(5));
         Executable call = () -> score.invoke(notOwner, "setPrice", gkScore.getAddress(), price, BigInteger.valueOf(5), 5);
-        expectErrorMessage(call, Message.Not.enough());
+        expectErrorMessage(call, MarketPlaceException.Not.enough());
 
         score.invoke(nftOwner, "setPrice", gkScore.getAddress(), price, BigInteger.valueOf(5), 5);
 
@@ -208,14 +212,14 @@ public class GenericMarketplaceTest extends TestBase {
         assertEquals(nftOwner.getAddress(), history.get(0).getOwner());
 
         call = () ->score.invoke(nftOwner, "getRate", BigInteger.TWO);
-        expectErrorMessage(call, Message.Not.found("Sale"));
+        expectErrorMessage(call, MarketPlaceException.Not.found("Sale"));
     }
 
     @Test
     void testRemoveFromSaleWithNftId(){
         BigInteger saleId=BigInteger.ONE;
         BigInteger price = BigInteger.valueOf(300).multiply(ICX);
-        score.invoke(admin, "toggleSettingEnabled", gkScore.getAddress());
+        score.invoke(admin, "toggleSellingEnabled", gkScore.getAddress());
 
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(gkScore.getAddress(), BigInteger.valueOf(5));
         doReturn(true).when(spyScore).operatorIsApprovedForAll(any(), any(), any());
@@ -225,12 +229,12 @@ public class GenericMarketplaceTest extends TestBase {
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(gkScore.getAddress(), BigInteger.ONE);
         doReturn(sm.createAccount().getAddress()).when(spyScore).getNftOwner(saleId);
         Executable call = () -> score.invoke(owner, "removeFromSale", saleId);
-        expectErrorMessage(call, Message.Not.nftOwner());
+        expectErrorMessage(call, MarketPlaceException.Not.nftOwner());
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(saleId);
         score.invoke(nftOwner, "removeFromSale", saleId);
 
         call = () -> score.invoke(nftOwner, "getRate", BigInteger.TWO);
-        expectErrorMessage(call, Message.Not.found("Sale"));
+        expectErrorMessage(call, MarketPlaceException.Not.found("Sale"));
     }
 
     @Test
@@ -248,7 +252,7 @@ public class GenericMarketplaceTest extends TestBase {
         doReturn(nftOwner.getAddress()).when(spyScore).getNftOwner(gkScore.getAddress(), BigInteger.valueOf(5));
         doReturn(true).when(spyScore).operatorIsApprovedForAll(gkScore.getAddress(), nftOwner.getAddress(), score.getAddress());
         doReturn(BigInteger.valueOf(10)).when(spyScore).getBalanceOfOwner(any(), any(), any());
-        score.invoke(admin, "toggleSettingEnabled", gkScore.getAddress());
+        score.invoke(admin, "toggleSellingEnabled", gkScore.getAddress());
         score.invoke(nftOwner, "setPrice", gkScore.getAddress(), price, BigInteger.valueOf(5), count);
         final BigInteger correctSaleId = BigInteger.ONE;
 
