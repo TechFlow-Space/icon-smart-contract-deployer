@@ -8,7 +8,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'io.contractdeployer.generics.airdrop.irc2'
+    mainClassName = 'io.contractdeployer.generics.airdrop.irc31.AirdropIRC31'
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
@@ -31,7 +31,7 @@ deployJar {
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
-            to='cx35dff7d1d3bfe33e3c68f30296f7892d484cb3ef'
+//            to='cx35dff7d1d3bfe33e3c68f30296f7892d484cb3ef'
             nid = 0x2
         }
     }

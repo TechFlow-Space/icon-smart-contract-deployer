@@ -11,12 +11,20 @@ import java.util.Map;
 public class UserDetails {
 
     public Address userAddress;
-    public BigInteger value;
+    public Address tokenAddress;
+    public Address tokenOwner;
     public BigInteger tokenId;
+    public BigInteger value;
     public BigInteger timestamp;
 
-    public void setUserAddress(Address userAddress) {
+    public UserDetails(Address tokenAddress,Address tokenOwner,Address userAddress,
+                       BigInteger tokenId,BigInteger value, BigInteger timestamp) {
+        this.tokenAddress = tokenAddress;
+        this.tokenOwner = tokenOwner;
         this.userAddress = userAddress;
+        this.tokenId = tokenId;
+        this.value = value;
+        this.timestamp = timestamp;
     }
 
     public void setValue(BigInteger value) {
@@ -30,12 +38,18 @@ public class UserDetails {
     public void setTokenId(BigInteger tokenId) {
         this.tokenId = tokenId;
     }
-
-    public UserDetails(Address userAddress, BigInteger amount, BigInteger timestamp) {
-        this.userAddress = userAddress;
-        this.value = amount;
-        this.timestamp = timestamp;
+    public void setTokenAddress(Address tokenAddress) {
+        this.tokenAddress = tokenAddress;
     }
+
+    public void setTokenOwner(Address tokenOwner) {
+        this.tokenOwner = tokenOwner;
+    }
+
+    public void setUserAddress(Address userAddress) {
+        this.userAddress = userAddress;
+    }
+
     public UserDetails(){}
 
     public Address getUserAddress() {
@@ -54,8 +68,18 @@ public class UserDetails {
         return timestamp;
     }
 
+    public Address getTokenAddress() {
+        return tokenAddress;
+    }
+    public Address getTokenOwner() {
+        return tokenOwner;
+    }
+
+
     public static void writeObject(ObjectWriter w, UserDetails obj) {
         w.beginList(3);
+        w.write(obj.tokenAddress);
+        w.write(obj.tokenOwner);
         w.write(obj.userAddress);
         w.write(obj.tokenId);
         w.write(obj.value);
@@ -66,6 +90,8 @@ public class UserDetails {
     public static UserDetails readObject(ObjectReader reader) {
         UserDetails obj = new UserDetails();
         reader.beginList();
+        obj.setTokenAddress(reader.readAddress());
+        obj.setTokenOwner(reader.readAddress());
         obj.setUserAddress(reader.readAddress());
         obj.setTokenId(reader.readBigInteger());
         obj.setValue(reader.readBigInteger());
@@ -76,6 +102,8 @@ public class UserDetails {
 
     public Map<String, Object> toObject() {
         Map<String, Object> toObject = new HashMap<>();
+        toObject.put("tokenAddress", getTokenAddress());
+        toObject.put("tokenOwner", getTokenOwner());
         toObject.put("userAddress", getUserAddress());
         toObject.put("tokenId", getTokenId());
         toObject.put("value", getValue());

@@ -5,13 +5,12 @@ import score.Address;
 import static io.contractdeployer.generics.airdrop.irc31.AirdropIRC31.TAG;
 
 public class AirdropIRC31Exception {
+    public static String invalidPayments() {
+        return TAG + " :: Invalid no of Payments";
+    }
 
     public static String notOwner() {
         return TAG + " :: Only owner can perform this action";
-    }
-
-    public static String notMinter() {
-        return TAG + " :: IRC2 airdrop can only be initiated by the minter.";
     }
 
     public static String lengthMismatch() {
