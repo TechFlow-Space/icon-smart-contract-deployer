@@ -15,6 +15,7 @@ import score.Context;
 
 import java.math.BigInteger;
 
+import static io.contractdeployer.generics.auction.Constant.TAG;
 import static io.contractdeployer.generics.auction.Constant.ZERO_ADDRESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -62,7 +63,7 @@ public class AuctionTest extends TestBase {
     public void invalid_bid_auction(){
         BigInteger endTime = BigInteger.valueOf(sm.getBlock().getTimestamp()+ 100_000_000);
         Executable call = () -> createAuction(tom,BigInteger.TWO,BigInteger.ZERO,endTime);
-        expectErrorMessage(call,"Minimum Bid must be greater than 0");
+        expectErrorMessage(call,TAG+" :: Minimum Bid must be greater than 0");
 
     }
 
@@ -70,7 +71,7 @@ public class AuctionTest extends TestBase {
     public void invalid_end_time_auction(){
         BigInteger endTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
         Executable call = () -> createAuction(tom,BigInteger.TWO,minBid,endTime);
-        expectErrorMessage(call,"Invalid auction end time");
+        expectErrorMessage(call,TAG + " :: Invalid auction end time");
     }
 
     @Test
@@ -104,7 +105,7 @@ public class AuctionTest extends TestBase {
         contextMock.when(getValue()).thenReturn(bidAmount);
 
         Executable call= () ->score.invoke(eva,"bid");
-        expectErrorMessage(call,"No Auction Available");
+        expectErrorMessage(call,TAG + " :: No Auction Available");
     }
 
     @Test
@@ -117,7 +118,7 @@ public class AuctionTest extends TestBase {
         contextMock.when(getValue()).thenReturn(bidAmount);
 
         Executable call= () ->score.invoke(tom,"bid");
-        expectErrorMessage(call,"Auction Creator Not Allowed To Bid");
+        expectErrorMessage(call,TAG + " :: Auction Creator Not Allowed To Bid");
 
     }
 
@@ -131,7 +132,7 @@ public class AuctionTest extends TestBase {
         contextMock.when(getValue()).thenReturn(bidAmount);
 
         Executable call= () ->score.invoke(tom,"bid");
-        expectErrorMessage(call,"Auction Creator Not Allowed To Bid");
+        expectErrorMessage(call,TAG + " :: Auction Creator Not Allowed To Bid");
 
     }
 
@@ -182,7 +183,7 @@ public class AuctionTest extends TestBase {
 
         // bid by john
         Executable call= () ->score.invoke(john,"bid");
-        expectErrorMessage(call,"Bid should be greater than zero/previous bidder");
+        expectErrorMessage(call,TAG + " :: Bid should be greater than zero/previous bidder");
 
         contextMock.when(getValue()).thenReturn(bidAmount.add(BigInteger.TWO));
 
@@ -202,7 +203,7 @@ public class AuctionTest extends TestBase {
     public void endAuction_with_invalid_id(){
 
         Executable call= () ->score.invoke(eva,"endAuction",BigInteger.ONE);
-        expectErrorMessage(call,"Invalid Auction Id");
+        expectErrorMessage(call,TAG + " :: Invalid auction id");
     }
 
     @Test
@@ -213,7 +214,7 @@ public class AuctionTest extends TestBase {
         createAuction(tom,BigInteger.TWO,minBid,endTime);
 
         Executable call= () ->score.invoke(eva,"endAuction",BigInteger.ONE);
-        expectErrorMessage(call,"OnlyAuctionCreator");
+        expectErrorMessage(call,TAG + " :: Only auction creator can do this action");
     }
 
     @Test
@@ -221,7 +222,7 @@ public class AuctionTest extends TestBase {
         endAuction();
 
         Executable call= () ->score.invoke(eva,"endAuction",BigInteger.ONE);
-        expectErrorMessage(call,"Auction Ended for auction id 1");
+        expectErrorMessage(call,TAG + " :: Auction Ended for auction id 1");
     }
 
     @Test

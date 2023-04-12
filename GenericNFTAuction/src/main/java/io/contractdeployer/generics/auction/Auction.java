@@ -1,5 +1,6 @@
 package io.contractdeployer.generics.auction;
 
+import io.contractdeployer.generics.auction.exception.AuctionException;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -59,8 +60,9 @@ public class Auction {
     public void createAuction(Address contractAddress, BigInteger id, BigInteger minimumBid, BigInteger auctionEndTime) {
         Address _from = getCaller();
         BigInteger currentIndex = currentAuctionIndex.getOrDefault(BigInteger.ZERO);
-        require(minimumBid.compareTo(BigInteger.ZERO) > 0, "Minimum Bid must be greater than 0");
-        require(auctionEndTime.compareTo(now()) > 0, "Invalid auction end time");
+        require(minimumBid.compareTo(BigInteger.ZERO) > 0,
+                AuctionException.invalidBid("Minimum Bid must be greater than 0"));
+        require(auctionEndTime.compareTo(now()) > 0, AuctionException.invalidEndTime());
 
         if (!currentIndex.equals(BigInteger.ZERO)) {
             AuctionDB currentAuction = auction.get(currentIndex);
@@ -85,13 +87,14 @@ public class Auction {
         Address _from = getCaller();
         BigInteger value = getValue();
         BigInteger currentIndex = currentAuctionIndex.getOrDefault(BigInteger.ZERO);
-        require(!currentIndex.equals(BigInteger.ZERO), "No Auction Available");
+        require(!currentIndex.equals(BigInteger.ZERO), AuctionException.unavailable());
 
         AuctionDB auctionDB = auction.get(currentIndex);
-        require(!_from.equals(auctionDB.getAuctionCreator()), "Auction Creator Not Allowed To Bid");
+        require(!_from.equals(auctionDB.getAuctionCreator()), AuctionException.creator());
         require(!auctionDB.getTransferred() || !auctionDB.getNoParticipation() || now().compareTo(auctionDB.getAuctionEndTime()) < 0, "Auction Ended");
         require(value.compareTo(auctionDB.getMinimumBid()) > 0 &&
-                value.compareTo(auctionDB.getHighestBid()) > 0, "Bid should be greater than zero/previous bidder");
+                value.compareTo(auctionDB.getHighestBid()) > 0,
+                AuctionException.invalidBid("Bid should be greater than zero/previous bidder"));
 
         // transfer to previous bidder
         if (!auctionDB.getHighestBidder().equals(ZERO_ADDRESS) && !auctionDB.getHighestBid().equals(BigInteger.ZERO)){
@@ -107,9 +110,9 @@ public class Auction {
     @External
     public void endAuction(BigInteger auctionId) {
         AuctionDB auctionDB = auction.get(auctionId);
-        require(auctionDB != null, "Invalid Auction Id");
-        require(!auctionDB.getTransferred(),"Auction Ended for auction id "+ auctionId );
-        require(getCaller().equals(auctionDB.getAuctionCreator()), "OnlyAuctionCreator");
+        require(auctionDB != null, AuctionException.invalidId());
+        require(!auctionDB.getTransferred(),AuctionException.auctionEnded(auctionId));
+        require(getCaller().equals(auctionDB.getAuctionCreator()), AuctionException.onlyAuctionCreator());
         Address contractAddress = auctionDB.getContractAddress();
         Address highestBidder = auctionDB.getHighestBidder();
         BigInteger nftId = auctionDB.getNftId();
