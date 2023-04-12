@@ -1,5 +1,6 @@
 package io.contractdeployer.generics.dao;
 
+import io.contractdeployer.generics.dao.exception.GovernanceException;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -9,6 +10,10 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public class GovImpl {
+
+    public final VarDB<String> name = Context.newVarDB("name",String.class);
+
+    public static final String TAG = "Governance"; // TODO
     public static final BigInteger HOUR_IN_SECONDS = BigInteger.valueOf(3600);
     public static final BigInteger DAY_IN_SECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(24));
     public static final BigInteger HOUR_IN_MICROSECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
@@ -19,23 +24,23 @@ public class GovImpl {
     private final VarDB<BigInteger> tokenId = Context.newVarDB("token_id", BigInteger.class);
     private final VarDB<BigInteger> minimumThreshold = Context.newVarDB("minimum_threshold", BigInteger.class);
 
+    private final VarDB<BigInteger> voteDuration = Context.newVarDB("vote_duration",BigInteger.class);
+    private final VarDB<BigInteger> graceDuration = Context.newVarDB("grace_duration",BigInteger.class);
     private final VarDB<BigInteger> proposalId = Context.newVarDB("proposal_id", BigInteger.class);
     private final DictDB<BigInteger, Proposal> proposals = Context.newDictDB("proposals", Proposal.class);
     // proposalId => holder => token votes
     private final BranchDB<BigInteger, DictDB<Address, TokenVote>> tokenVotes = Context.newBranchDB("token_votes", TokenVote.class);
     private final DictDB<BigInteger, Votes> votes = Context.newDictDB("votes_sum", Votes.class);
 
+    public GovImpl(String _name){
+        if (name.get()==null){
+            name.set(_name);
+        }
+    }
+
     @External(readonly=true)
     public String name() {
-        return "AgoraScore";
-    }
-
-    private void checkCallerOrThrow(Address caller, String errMsg) {
-        Context.require(Context.getCaller().equals(caller), errMsg);
-    }
-
-    private void onlyOwner() {
-        checkCallerOrThrow(Context.getOwner(), "OnlyOwner");
+        return TAG + name.get();
     }
 
     @External(readonly=true)
@@ -56,22 +61,11 @@ public class GovImpl {
         }
     }
 
-    private Address tokenAddress() {
-        return tokenAddress.get();
-    }
-
-    private String tokenType() {
-        return tokenType.get();
-    }
-
-    private BigInteger tokenId() {
-        return tokenId.getOrDefault(BigInteger.ZERO);
-    }
 
     @External
     public void setGovernanceToken(Address _address, String _type, @Optional BigInteger _id) {
         onlyOwner();
-        Context.require(tokenAddress() == null, "GovernanceTokenAlreadySet");
+        Context.require(tokenAddress() == null, GovernanceException.tokenSet());
         var type = _type.toLowerCase();
         switch (type) {
             case TokenProxy.IRC2:
@@ -79,7 +73,7 @@ public class GovImpl {
                 tokenType.set(type);
                 break;
             default:
-                Context.revert("InvalidTokenType");
+                Context.revert(GovernanceException.invalidToken());
         }
         tokenAddress.set(_address);
         if (TokenProxy.IRC31.equals(type)) {
@@ -95,7 +89,7 @@ public class GovImpl {
     @External
     public void setMinimumThreshold(BigInteger _amount) {
         onlyOwner();
-        Context.require(_amount.signum() > 0, "Minimum threshold must be positive");
+        Context.require(_amount.signum() > 0, GovernanceException.greaterThanZero());
         minimumThreshold.set(_amount);
     }
 
@@ -104,26 +98,37 @@ public class GovImpl {
         return proposalId.getOrDefault(BigInteger.ZERO);
     }
 
-    private void checkEndTimeOrThrow(BigInteger _endTime) {
-        var now = Context.getBlockTimestamp();
-        var minimumEnd = DAY_IN_MICROSECONDS.longValue();
-        Context.require(_endTime.longValue() > now + minimumEnd, "InvalidEndTime");
+    @External
+    public void setVoteDuration(BigInteger _duration){
+        onlyOwner();
+        voteDuration.set(_duration);
     }
 
-    private BigInteger getNextId() {
-        BigInteger _id = lastProposalId();
-        _id = _id.add(BigInteger.ONE);
-        proposalId.set(_id);
-        return _id;
+    @External
+    public void setGraceDuration(BigInteger _duration){
+        onlyOwner();
+        Context.require(checkValidTimeStamp(_duration),GovernanceException.invalidTime());
+        graceDuration.set(_duration);
+    }
+
+    @External(readonly = true)
+    public BigInteger getVoteDuration(){
+        return voteDuration.getOrDefault(DAY_IN_MICROSECONDS);
+    }
+
+    @External(readonly = true)
+    public BigInteger getGraceDuration(){
+        return graceDuration.getOrDefault(HOUR_IN_MICROSECONDS.multiply(BigInteger.valueOf(3)));
     }
 
     @External
     public void submitProposal(BigInteger _endTime, String _ipfsHash) {
         Address sender = Context.getCaller();
-        Context.require(!sender.isContract(), "Only EOA can submit proposal");
+        Context.require(!sender.isContract(), GovernanceException.onlyEOA());
         checkEndTimeOrThrow(_endTime);
 
-        Context.require(minimumThreshold().compareTo(getTokenBalance(sender)) <= 0, "MinimumThresholdNotMet");
+        Context.require(minimumThreshold().compareTo(getTokenBalance(sender)) <= 0,
+                GovernanceException.thresholdNotMet(minimumThreshold()));
 
         BigInteger pid = getNextId();
         long createTime = Context.getBlockTimestamp();
@@ -141,19 +146,21 @@ public class GovImpl {
     @External
     public void vote(BigInteger _proposalId, String _vote) {
         Address sender = Context.getCaller();
-        Context.require(!sender.isContract(), "Only EOA can submit proposal");
+        Context.require(!sender.isContract(), GovernanceException.onlyEOA());
 
         Proposal pl = proposals.get(_proposalId);
-        Context.require(pl != null, "InvalidProposalId");
-        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, "ProposalNotActive");
+        Context.require(pl != null, GovernanceException.invalidId(_proposalId));
+        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, GovernanceException.notActive());
 
         BigInteger balance = getTokenBalance(sender);
-        Context.require(balance.signum() > 0, "NotTokenHolder");
+        Context.require(balance.signum() > 0, GovernanceException.notTokenHolder());
 
         var vote = _vote.toLowerCase();
-        Context.require(Votes.isValid(vote), "InvalidVoteType");
+        Context.require(Votes.isValid(vote), GovernanceException.invalidVote("Invalid vote type"));
 
-        Context.require(tokenVotes.at(_proposalId).get(sender) == null, "AlreadyVoted");
+        // maybe not put this -> change vote option // TODO
+        Context.require(tokenVotes.at(_proposalId).get(sender) == null,
+                GovernanceException.invalidVote("Caller has already voted"));
         tokenVotes.at(_proposalId).set(sender, new TokenVote(vote, balance));
         var vs = votes.get(_proposalId);
         if (vs == null) {
@@ -167,13 +174,14 @@ public class GovImpl {
     public void cancelProposal(BigInteger _proposalId) {
         Address sender = Context.getCaller();
         Proposal pl = proposals.get(_proposalId);
-        Context.require(pl != null, "InvalidProposalId");
-        Context.require(pl.getCreator().equals(sender), "NotCreator");
-        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, "ProposalNotActive");
+        Context.require(pl != null, GovernanceException.invalidId(_proposalId));
+        Context.require(pl.getCreator().equals(sender), GovernanceException.onlyCreator());
+        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, GovernanceException.notActive());
 
         long now = Context.getBlockTimestamp();
-        long graceTime = 3 * HOUR_IN_MICROSECONDS.longValue();
-        Context.require(pl.getStartTime() + graceTime > now, "GraceTimePassed");
+        long graceTime = getGraceDuration().longValue(); // make this generic
+        Context.require(pl.getStartTime() + graceTime > now,
+                GovernanceException.unknown("Grace duration has passed"));
 
         pl.setStatus(Proposal.STATUS_CANCELED);
         proposals.set(_proposalId, pl);
@@ -183,11 +191,12 @@ public class GovImpl {
     @External
     public void closeProposal(BigInteger _proposalId) {
         Proposal pl = proposals.get(_proposalId);
-        Context.require(pl != null, "InvalidProposalId");
-        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, "ProposalNotActive");
+        Context.require(pl != null, GovernanceException.invalidId(_proposalId));
+        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, GovernanceException.notActive());
 
         long now = Context.getBlockTimestamp();
-        Context.require(pl.getEndTime() <= now, "EndTimeNotReached");
+        Context.require(pl.getEndTime() <= now,
+                GovernanceException.unknown("End time of proposal has not reached"));
 
         pl.setStatus(Proposal.STATUS_CLOSED);
         proposals.set(_proposalId, pl);
@@ -197,7 +206,7 @@ public class GovImpl {
     @External(readonly=true)
     public Map<String, Object> getProposal(BigInteger _proposalId) {
         Proposal pl = proposals.get(_proposalId);
-        Context.require(pl != null, "InvalidProposalId");
+        Context.require(pl != null, GovernanceException.invalidId(_proposalId));
 
         var vs = votes.get(_proposalId);
         if (vs == null) {
@@ -228,7 +237,7 @@ public class GovImpl {
         return Map.of();
     }
 
-    @EventLog(indexed=1)
+    @EventLog(indexed=2)
     public void ProposalSubmitted(BigInteger _proposalId, Address _creator) {}
 
     @EventLog(indexed=1)
@@ -236,4 +245,48 @@ public class GovImpl {
 
     @EventLog(indexed=1)
     public void ProposalClosed(BigInteger _proposalId) {}
+
+    private void checkCallerOrThrow(Address caller, String errMsg) {
+        Context.require(Context.getCaller().equals(caller), errMsg);
+    }
+
+    private void onlyOwner() {
+        checkCallerOrThrow(Context.getOwner(), GovernanceException.onlyOwner());
+    }
+
+    private Address tokenAddress() {
+        return tokenAddress.get();
+    }
+
+    private String tokenType() {
+        return tokenType.get();
+    }
+
+    private BigInteger tokenId() {
+        return tokenId.getOrDefault(BigInteger.ZERO);
+    }
+
+    private void checkEndTimeOrThrow(BigInteger _endTime) {
+        BigInteger minimumEnd = getVoteDuration();
+        Context.require(checkValidTimeStamp(_endTime),
+                GovernanceException.invalidTime());
+        Context.require(_endTime.compareTo(now().add(minimumEnd))>0,
+                GovernanceException.invalidEndTime());
+    }
+
+    private boolean checkValidTimeStamp(BigInteger timestamp) {
+        return timestamp.toString().length() == 16;
+    }
+
+    private BigInteger now(){
+        return BigInteger.valueOf(Context.getBlockTimestamp());
+    }
+
+    private BigInteger getNextId() {
+        BigInteger _id = lastProposalId();
+        _id = _id.add(BigInteger.ONE);
+        proposalId.set(_id);
+        return _id;
+    }
+
 }

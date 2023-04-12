@@ -12,6 +12,7 @@ import score.Context;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static io.contractdeployer.generics.dao.GovImpl.TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,7 +30,7 @@ public class GovImplTest extends TestBase {
     @BeforeEach
     void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2TestToken.class, ICX.multiply(BigInteger.valueOf(10000)));
-        genericDaoScore = sm.deploy(owner, GovImpl.class);
+        genericDaoScore = sm.deploy(owner, GovImpl.class," Agora Score");
         spyScore = (GovImpl) spy(genericDaoScore.getInstance());
         genericDaoScore.setInstance(spyScore);
         // set governance token
@@ -41,7 +42,7 @@ public class GovImplTest extends TestBase {
 
     @Test
     void name() {
-        assertEquals("AgoraScore", genericDaoScore.call("name"));
+        assertEquals(TAG +" Agora Score", genericDaoScore.call("name"));
     }
 
     @Test
