@@ -16,7 +16,7 @@ public class Message {
         return TAG + " :: " + "PaymentMismatch";
     }
 
-    static class Not {
+    public static class Not {
         public static final String owner(){
             return TAG + " :: " + "NotOwner";
         }
@@ -27,6 +27,9 @@ public class Message {
 
         public static final String validContract(){
             return TAG + " :: " + "NotAValidContract";
+        }
+        public static final String validContractType(){
+            return TAG + " :: " + "NotAValidContractType";
         }
 
         public static final String deployed(){
