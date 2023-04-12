@@ -2,9 +2,6 @@ rootProject.name = 'core-contracts'
 include 'GenericIRC3'
 findProject(":GenericIRC3").projectDir = file("GenericIRC3")
 
-include 'GenericAirdrop'
-findProject(":GenericAirdrop").projectDir = file("GenericAirdrop")
-
 include 'GenericAirdropIRC2'
 findProject(":GenericAirdropIRC2").projectDir = file("GenericAirdropIRC2")
 
