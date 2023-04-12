@@ -18,7 +18,7 @@ public class AirdropIRC3Exception {
     }
 
     public static String approvalRequired(BigInteger id) {
-        return TAG + " :: Airdrop contract is not approved for transfer of " + id;
+        return TAG + " :: Airdrop contract is not approved for transfer of tokenID " + id;
     }
 
     public static String invalidTimestamp() {

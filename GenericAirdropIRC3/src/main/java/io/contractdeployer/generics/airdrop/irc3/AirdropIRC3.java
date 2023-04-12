@@ -4,7 +4,6 @@ import io.contractdeployer.generics.airdrop.irc3.exception.AirdropIRC3Exception;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
-import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -12,74 +11,41 @@ import scorex.util.ArrayList;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 
 public class AirdropIRC3 {
 
     public static final String TAG = "Airdrop IRC3";
 
-    public static final DictDB<Address,BigInteger> distributedTokens =
-            Context.newDictDB("distributedTokens-irc3",BigInteger.class);
-
     public static final ArrayDB<UserDetails> userData = Context.newArrayDB("userData", UserDetails.class);
 
     public static final VarDB<Integer> airdropCount = Context.newVarDB("airdrop_count",Integer.class);
-    public static final VarDB<Integer> processedCount = Context.newVarDB("airdrop_count",Integer.class);
+    public static final VarDB<Integer> processedCount = Context.newVarDB("processed_count",Integer.class);
 
-    @External(readonly = true)
-    public Integer getAirdropedCount(){
-        return airdropCount.getOrDefault(0);
-    }
     @External(readonly = true)
     public String name() {
         return TAG;
     }
 
     @External(readonly = true)
-    public BigInteger getDistributedTokensOf(Address recipient){
-        return distributedTokens.getOrDefault(recipient,BigInteger.ZERO);
+    public int getAirdroppedCount(){
+        return airdropCount.getOrDefault(0);
     }
 
     @External(readonly = true)
-    public List<UserDetails> getListedUserInfo() {
-        List<UserDetails> details = new ArrayList<>();
+    public int getProcessedCount(){
+        return processedCount.getOrDefault(0);
+    }
+
+    @External(readonly = true)
+    public List<Map<String,Object>> getListedUserInfo() {
+        List<Map<String,Object>> details = new ArrayList<>();
         int count = userData.size();
         for (int i = 0; i < count; i++) {
             UserDetails userDetails = userData.get(i);
-            details.add(userDetails);
+            details.add(userDetails.toObject());
         }
         return details;
-    }
-
-    @External
-    public void airdropIRC3(Address _tokenAddress, Address _from, Address _recipients, BigInteger _tokenId) {
-
-        checkApproval(_tokenAddress, _tokenId);
-
-        call(_tokenAddress, "transferFrom", _from, _recipients, _tokenId); // check the transfer
-        UserDetails userDetails = new UserDetails(_tokenAddress,_from,_recipients, _tokenId,BigInteger.ZERO);
-        userData.set(getAirdropedCount(),userDetails);
-
-        processedCount.set(processedCount.get()+1);
-        IRC3Airdrop(_from, _recipients, _tokenId);
-    }
-
-
-    @External
-    public void airdropIRC3Batch(Address _tokenAddress, Address[] _from, Address[] _recipients, BigInteger[] _tokenId) {
-        Context.require(_recipients.length == _tokenId.length, AirdropIRC3Exception.lengthMismatch());
-        int count = _recipients.length;
-
-        checkApprovalBatch(_tokenAddress, _tokenId);
-
-        for (int i = 0; i < count; i++) {
-            call(_tokenAddress, "transferFrom", _from[i], _recipients[i], _tokenId[i]); // check the transfer
-            UserDetails userDetails = new UserDetails(_tokenAddress,_from[i],_recipients[i], _tokenId[i],BigInteger.ZERO);
-            userData.set(getAirdropedCount(),userDetails);
-
-            processedCount.set(processedCount.get()+i);
-            IRC3Airdrop(_from[i], _recipients[i], _tokenId[i]);
-        }
-
     }
 
     @External
@@ -91,19 +57,20 @@ public class AirdropIRC3 {
         Context.require(checkValidTimeStamp(_timestamp), AirdropIRC3Exception.invalidTimestamp());
 
         int count = _recipients.length;
-        int currentCount = getAirdropedCount();
+        int currentCount = getAirdroppedCount();
         airdropCount.set(currentCount+count);
 
         for (int i = currentCount; i < count; i++) {
             UserDetails userDetails = new UserDetails(_tokenAddress[i],_owners[i],_recipients[i], _tokenId[i], _timestamp[i]);
-            userData.set(i,userDetails);
+            userData.add(userDetails);
         }
 
     }
 
     @External
-    public void airdropToListedUsers(int paymentToProcess){ // reentrancy
-        int totalPayed = getAirdropedCount();
+    public void airdropToListedUsers(int paymentToProcess){
+        onlyOwner();// reentrancy
+        int totalPayed = getAirdroppedCount();
         int countOfProcess = processedCount.getOrDefault(0);
 
         Context.require(paymentToProcess+countOfProcess <= totalPayed,AirdropIRC3Exception.invalidPayments());
@@ -113,7 +80,7 @@ public class AirdropIRC3 {
             UserDetails userDetails = userData.get(i);
 
             BigInteger timestamp = userDetails.timestamp;
-            BigInteger currentTime = getBlockTimestamp();
+            BigInteger currentTime = now();
             Context.require(timestamp.compareTo(currentTime) <= 0,
                     AirdropIRC3Exception.unknown("Cannot call before timestamp."));
 
@@ -121,7 +88,20 @@ public class AirdropIRC3 {
         }
     }
 
-    public BigInteger getBlockTimestamp(){
+    @EventLog(indexed = 3)
+    public void IRC3Airdropped(Address from, Address to, BigInteger tokenId) {
+    }
+
+    private void airdropIRC3(Address _tokenAddress, Address _from, Address _recipient, BigInteger _tokenId) {
+
+        checkApproval(_tokenAddress, _tokenId);
+
+        call(_tokenAddress, "transferFrom", _from, _recipient, _tokenId);
+
+        IRC3Airdropped(_from, _recipient, _tokenId);
+    }
+
+    public BigInteger now(){
         return  BigInteger.valueOf(Context.getBlockTimestamp());
     }
 
@@ -133,26 +113,18 @@ public class AirdropIRC3 {
         return isValid;
     }
 
-
-    protected void checkApprovalBatch(Address address, BigInteger[] tokenId) {
-        for (BigInteger id : tokenId) {
-            checkApproval(address,id);
-        }
-    }
-
     protected void checkApproval(Address address, BigInteger tokenId){
         Address approved = call(Address.class, address, "getApproved", tokenId);
-        Address caller = Context.getAddress();
+        Address caller = getAddress();
         Context.require(caller.equals(approved), AirdropIRC3Exception.approvalRequired(tokenId));
+    }
+
+    public Address getAddress(){
+        return Context.getAddress();
     }
 
     protected void onlyOwner() {
         Context.require(Context.getCaller().equals(Context.getOwner()), AirdropIRC3Exception.notOwner());
-    }
-
-
-    @EventLog(indexed = 3)
-    public void IRC3Airdrop(Address from, Address to, BigInteger tokenId) {
     }
 
     public void call(Address contract, String method, Object... params) {

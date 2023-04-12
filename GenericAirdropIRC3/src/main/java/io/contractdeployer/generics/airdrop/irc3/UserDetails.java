@@ -81,8 +81,8 @@ public class UserDetails {
     public static UserDetails readObject(ObjectReader reader) {
         UserDetails obj = new UserDetails();
         reader.beginList();
-        obj.setTokenOwner(reader.readAddress());
         obj.setTokenAddress(reader.readAddress());
+        obj.setTokenOwner(reader.readAddress());
         obj.setUserAddress(reader.readAddress());
         obj.setTokenId(reader.readBigInteger());
         obj.setTimestamp(reader.readBigInteger());
