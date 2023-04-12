@@ -131,7 +131,7 @@ public class AirdropIRC31 {
         checkApproval(_tokenAddress, _from);
 
 
-        Context.call(_tokenAddress, "transferFrom", _from, _recipient, _tokenId, _value);
+        call(_tokenAddress, "transferFrom", _from, _recipient, _tokenId, _value);
 
         IRC31Airdrop(_from, _recipient, _tokenId,_value);
 
@@ -139,7 +139,7 @@ public class AirdropIRC31 {
 
     protected void checkApproval(Address address, Address owner) {
 
-        boolean approved = Context.call(boolean.class, address, "isApprovedForAll", owner);
+        boolean approved = call(boolean.class, address, "isApprovedForAll", owner);
         Context.require(approved, AirdropIRC31Exception.approvalRequiredForAll(owner));
 
     }
@@ -153,5 +153,16 @@ public class AirdropIRC31 {
 
     @EventLog(indexed = 3)
     public void IRC31Airdrop(Address from,Address to,BigInteger tokenId,BigInteger value) {
+    }
+
+
+
+
+    public void call(Address contract, String method, Object... params) {
+        Context.call(contract, method, params);
+    }
+
+    public <K> K call(Class<K> kClass, Address contract, String method, Object... params) {
+        return Context.call(kClass, contract, method, params);
     }
 }
