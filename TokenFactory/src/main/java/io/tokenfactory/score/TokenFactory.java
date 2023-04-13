@@ -16,6 +16,8 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import io.tokenfactory.score.exception.TokenFactoryException;
+
 import static io.tokenfactory.score.Constant.*;
 import static io.tokenfactory.score.enums.ContractType.contractTypeValidate;
 import static score.Context.*;
@@ -47,7 +49,11 @@ public class TokenFactory {
     public void setAdmin(Address admin) {
         ownerOnly();
         this.admin.set(admin);
+        TransferAdminRight(Context.getAddress(),admin);
     }
+
+    @EventLog(indexed = 2)
+    public void TransferAdminRight(Address _oldAdmin, Address _newAdmin){}
 
     @External(readonly = true)
     public Address getTreasury() {
@@ -68,7 +74,7 @@ public class TokenFactory {
         Address caller = getCaller();
 
         if (!isUpdate) {
-            require(!this.contentInfo.keys().contains(name), Message.duplicateContract());
+            require(!this.contentInfo.keys().contains(name), TokenFactoryException.duplicateContract());
         }
 
         ContentDB contentDB = new ContentDB(name, description, timestamp, caller, type);
@@ -105,9 +111,9 @@ public class TokenFactory {
     @External
     @Payable
     public void deployContract(String key, Address deployer, @Optional byte[] _data) {
-        require(!deployer.equals(ZERO_ADDRESS), Message.zeroAddress());
-        require(getPaidValue().equals(this.getDeployFee()), Message.paymentMismatch());
-        require(this.contentInfo.keys().contains(key), Message.Not.deployed());
+        require(!deployer.equals(ZERO_ADDRESS), TokenFactoryException.zeroAddress());
+        require(getPaidValue().equals(this.getDeployFee()), TokenFactoryException.paymentMismatch());
+        require(this.contentInfo.keys().contains(key), TokenFactoryException.notDeployed());
 
         BigInteger currentSize = BigInteger.valueOf(this.deploymentDetail.keys().size() + 1);
         byte[] content = this.content.get(key);
@@ -142,7 +148,7 @@ public class TokenFactory {
             case "DAO":
                 return deploy(content);
             default:
-                throw new UserRevertedException(Message.Not.validContract());
+                throw new UserRevertedException(TokenFactoryException.notValidContract());
         }
     }
 
@@ -203,10 +209,10 @@ public class TokenFactory {
     }
 
     void ownerOnly() {
-        require(getCaller().equals(getOwner()), Message.Not.owner());
+        require(getCaller().equals(getOwner()), TokenFactoryException.notOwner());
     }
 
     void adminOnly() {
-        require(getCaller().equals(getAdmin()), Message.Not.admin());
+        require(getCaller().equals(getAdmin()), TokenFactoryException.notAdmin());
     }
 }

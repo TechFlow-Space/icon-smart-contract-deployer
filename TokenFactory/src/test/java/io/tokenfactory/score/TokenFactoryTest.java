@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-
+import static io.tokenfactory.score.Constant.TAG;
 import java.math.BigInteger;
 
 import static io.tokenfactory.score.TestHelper.expectErrorMessage;
@@ -45,7 +45,7 @@ public class TokenFactoryTest extends TestBase {
         Account user = sm.createAccount();
 
         Executable call = () -> score.invoke(admin, "setAdmin", admin.getAddress());
-        expectErrorMessage(call, Message.Not.owner());
+        expectErrorMessage(call, TAG + " :: NotOwner");
 
         score.invoke(owner, "setAdmin", user.getAddress());
 
@@ -57,7 +57,7 @@ public class TokenFactoryTest extends TestBase {
         Account user = sm.createAccount();
 
         Executable call = () -> score.invoke(admin, "setTreasury", user.getAddress());
-        expectErrorMessage(call, Message.Not.owner());
+        expectErrorMessage(call, TAG + " :: NotOwner");
 
         score.invoke(owner, "setTreasury", user.getAddress());
 
@@ -67,16 +67,20 @@ public class TokenFactoryTest extends TestBase {
     @Test
     void setContractContent() {
 
-        Executable call = () -> score.invoke(user, "setContractContent", "IRC2", "A Fungible Token", "content".getBytes(), false);
-        expectErrorMessage(call, Message.Not.admin());
+        Executable call = () -> score.invoke(user, "setContractContent", "IRC2", "FUNGIBLE_TOKEN",
+                "A Fungible Token", "content".getBytes(), false);
+        expectErrorMessage(call, TAG + " :: NotAdmin");
 
-        call = () -> score.invoke(admin, "setContractContent", "IRC21", "ERROR", "content".getBytes(), false);
-        expectErrorMessage(call, Message.Not.validContract());
+        call = () -> score.invoke(admin, "setContractContent", "IRC21", "ERROR","ERROR",
+                "content".getBytes(), false);
+        expectErrorMessage(call, TAG + " :: NotAValidContractType");
 
-        score.invoke(admin, "setContractContent", "IRC2", " A fungible token", "content".getBytes(), false);
+        score.invoke(admin, "setContractContent", "IRC2", "FUNGIBLE_TOKEN"," A fungible token",
+                "content".getBytes(), false);
 
-        call = () -> score.invoke(admin, "setContractContent", "IRC2", "A fungible token", "content".getBytes(), false);
-        expectErrorMessage(call, Message.duplicateContract());
+        call = () -> score.invoke(admin, "setContractContent", "IRC2", "FUNGIBLE_TOKEN","A fungible token",
+                "content".getBytes(), false);
+        expectErrorMessage(call, TAG + " :: DuplicateContract");
 
     }
 
@@ -95,19 +99,19 @@ public class TokenFactoryTest extends TestBase {
         doReturn(deployFee).when(spyScore).getPaidValue();
 
         Executable call = () -> score.invoke(user, "deployContract", "IRC2", ZERO_ADDRESS, irc2_data);
-        expectErrorMessage(call, Message.zeroAddress());
+        expectErrorMessage(call, TAG + " :: ZeroAddress");
 
         doReturn(BigInteger.valueOf(5)).when(spyScore).getPaidValue();
 
         call = () -> score.invoke(user, "deployContract", "IRC2", user.getAddress(), irc2_data);
-        expectErrorMessage(call, Message.paymentMismatch());
+        expectErrorMessage(call, TAG + " :: PaymentMismatch");
 
         doReturn(deployFee).when(spyScore).getPaidValue();
 
         call = () -> score.invoke(user, "deployContract", "IRC2", user.getAddress(), irc2_data);
-        expectErrorMessage(call, Message.Not.deployed());
+        expectErrorMessage(call, TAG + " :: ContractNotDeployed");
 
-        score.invoke(admin, "setContractContent", "IRC2", "A fungible token", "content".getBytes(), false);
+        score.invoke(admin, "setContractContent", "IRC2", "FUNGIBLE_TOKEN","A fungible token", "content".getBytes(), false);
 
         doReturn(contract.getAddress()).when(spyScore).deployContract("IRC2", "content".getBytes(), irc2_data);
 

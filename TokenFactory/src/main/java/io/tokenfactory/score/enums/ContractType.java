@@ -1,6 +1,6 @@
 package io.tokenfactory.score.enums;
 
-import io.tokenfactory.score.Message;
+import io.tokenfactory.score.exception.TokenFactoryException;
 import score.UserRevertedException;
 
 public enum ContractType {
@@ -16,7 +16,7 @@ public enum ContractType {
             case "NON_FUNGIBLE_TOKEN":
                 break;
             default:
-                throw new UserRevertedException(Message.Not.validContractType());
+                throw new UserRevertedException(TokenFactoryException.notValidContractType());
         }
     }
 }
