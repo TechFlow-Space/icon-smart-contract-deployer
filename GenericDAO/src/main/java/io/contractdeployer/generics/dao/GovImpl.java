@@ -39,7 +39,7 @@ public class GovImpl {
 
     @External(readonly=true)
     public String name() {
-        return TAG + name.get();
+        return TAG + " " + name.get();
     }
 
     @External(readonly=true)

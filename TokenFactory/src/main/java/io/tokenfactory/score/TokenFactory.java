@@ -135,17 +135,21 @@ public class TokenFactory {
         }
         switch (key) {
             case "IRC2":
-                return deploy(content, data.get("name").asString(), data.get("symbol").asString(), new BigInteger(data.get("decimal").asString()));
+                return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
+                        new BigInteger(data.get("decimal").asString()), Address.fromString(data.get("minter").asString()));
             case "IRC3":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
                         new BigInteger(data.get("cap").asString()), new BigInteger(data.get("mintCost").asString()));
             case "IRC31":
                 return deploy(content, data.get("name").asString(), data.get("symbol").asString(),
                         new BigInteger(data.get("cap").asString()), new BigInteger(data.get("maxBatchMintCount").asString()));
-            case "NFT_AUCTION":
-            case "AIRDROP":
-            case "MARKETPLACE":
             case "DAO":
+                return deploy(content,data.get("name").asString());
+            case "NFT_AUCTION":
+            case "IRC2_Airdrop":
+            case "IRC3_Airdrop":
+            case "IRC31_Airdrop":
+            case "MARKETPLACE":
                 return deploy(content);
             default:
                 throw new UserRevertedException(TokenFactoryException.notValidContract());
