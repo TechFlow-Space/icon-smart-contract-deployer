@@ -70,7 +70,7 @@ public class AirdropIRC31 {
 
     @External
     public void airdropToListedUsers(int paymentToProcess){
-        onlyOwner();// reentrancy
+        onlyOwner();
         int totalPayed = getAirdroppedCount();
         int countOfProcess = processedCount.getOrDefault(0);
 
@@ -107,25 +107,8 @@ public class AirdropIRC31 {
     }
 
 
-//    @External
-//    public void airdropIRC31Batch(Address _tokenAddress, Address[] _from, Address[] _recipients,
-//                                  BigInteger[] _tokenId, BigInteger[] _value) {
-//        Context.require(_recipients.length == _tokenId.length, AirdropIRC31Exception.lengthMismatch());
-//        Context.require(_recipients.length == _value.length, AirdropIRC31Exception.lengthMismatch());
-//        Context.require(_recipients.length == _tokenId.length, AirdropIRC31Exception.lengthMismatch());
-//        int count = _recipients.length;
-//
-//        checkApprovalForAll(_tokenAddress, _from);
-//
-//        for (int i = 0; i < count; i++) {
-//            Context.call(_tokenAddress, "transferFrom", _from[i], _recipients[i], _tokenId[i], _value[i]);
-//
-//            IRC31Airdrop(_from[i], _recipients[i], _tokenId[i],_value[i]);// check the transfer
-//        }
-//    }
 
-    @External
-    public void airdropIRC31(Address _tokenAddress, Address _from, Address _recipient,
+    protected void airdropIRC31(Address _tokenAddress, Address _from, Address _recipient,
                                   BigInteger _tokenId, BigInteger _value) {
 
         checkApproval(_tokenAddress, _from);
@@ -143,13 +126,6 @@ public class AirdropIRC31 {
         Context.require(approved, AirdropIRC31Exception.approvalRequiredForAll(owner));
 
     }
-
-//    protected void checkApprovalForAll(Address address, Address[] owner) {
-//        for (Address addr : owner) {
-//            checkApproval(address,addr);
-//        }
-//
-//    }
 
     @EventLog(indexed = 3)
     public void IRC31Airdrop(Address from,Address to,BigInteger tokenId,BigInteger value) {
