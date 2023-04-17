@@ -11,14 +11,13 @@ import java.util.Map;
 
 public class GovImpl {
 
-    public final VarDB<String> name = Context.newVarDB("name",String.class);
-
-    public static final String TAG = "Governance"; // TODO
+    public static final String TAG = "Governance"; // TODO : is the tag okay?
     public static final BigInteger HOUR_IN_SECONDS = BigInteger.valueOf(3600);
     public static final BigInteger DAY_IN_SECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(24));
     public static final BigInteger HOUR_IN_MICROSECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
     public static final BigInteger DAY_IN_MICROSECONDS = DAY_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
 
+    public final VarDB<String> name = Context.newVarDB("name",String.class);
     private final VarDB<Address> tokenAddress = Context.newVarDB("token_address", Address.class);
     private final VarDB<String> tokenType = Context.newVarDB("token_type", String.class);
     private final VarDB<BigInteger> tokenId = Context.newVarDB("token_id", BigInteger.class);
@@ -158,7 +157,6 @@ public class GovImpl {
         var vote = _vote.toLowerCase();
         Context.require(Votes.isValid(vote), GovernanceException.invalidVote("Invalid vote type"));
 
-        // maybe not put this -> change vote option // TODO
         Context.require(tokenVotes.at(_proposalId).get(sender) == null,
                 GovernanceException.invalidVote("Caller has already voted"));
         tokenVotes.at(_proposalId).set(sender, new TokenVote(vote, balance));
@@ -179,7 +177,7 @@ public class GovImpl {
         Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, GovernanceException.notActive());
 
         long now = Context.getBlockTimestamp();
-        long graceTime = getGraceDuration().longValue(); // make this generic
+        long graceTime = getGraceDuration().longValue();
         Context.require(pl.getStartTime() + graceTime > now,
                 GovernanceException.unknown("Grace duration has passed"));
 

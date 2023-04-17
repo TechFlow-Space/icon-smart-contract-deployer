@@ -77,14 +77,14 @@ public class IRC3Test extends TestBase {
         doReturn(paidAmount).when(tokenSpy).getPaidValue();
 
         Executable call = () -> ircScore.invoke(user,"mint","uri");
-        expectErrorMessage(call, "IRC3 :: Price Mismatch.");
+        expectErrorMessage(call, "IRC3 :: Price Mismatch");
 
 
         paidAmount = BigInteger.valueOf(101).multiply(ICX);
         doReturn(paidAmount).when(tokenSpy).getPaidValue();
 
         call = () -> ircScore.invoke(user,"mint","uri");
-        expectErrorMessage(call, "IRC3 :: Price Mismatch.");
+        expectErrorMessage(call, "IRC3 :: Price Mismatch");
     }
     @Test
     void mint(){
