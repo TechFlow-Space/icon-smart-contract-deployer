@@ -20,7 +20,7 @@ public class Constant {
     static final String SCORE_AVAILABLE_SALES = "score_available_sales";
     static final String OWNERS_NFT_SALE_ID = "owners_nft_sale_id";
     static final String COUNTER = "counter";
-    static final BigInteger ICX = BigInteger.TEN.pow(18);
+    static final BigInteger ICX = pow10(18);
 
     //Method names
     static final String isApprovedForAll = "isApprovedForAll";
@@ -34,5 +34,14 @@ public class Constant {
     static final String Selling = "Selling";
     static final String Price = "Price";
     static final String desc = "desc";
+
+
+    private static BigInteger pow10(int exponent) {
+        BigInteger result = BigInteger.ONE;
+        for (int i = 0; i < exponent; i++) {
+            result = result.multiply(BigInteger.TEN);
+        }
+        return result;
+    }
 
 }
