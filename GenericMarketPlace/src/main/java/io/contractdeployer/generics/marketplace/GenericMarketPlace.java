@@ -2,6 +2,7 @@ package io.contractdeployer.generics.marketplace;
 
 import io.contractdeployer.generics.marketplace.db.SaleDB;
 
+import io.contractdeployer.generics.marketplace.exception.MarketPlaceException;
 import score.Address;
 import score.ArrayDB;
 import score.Context;

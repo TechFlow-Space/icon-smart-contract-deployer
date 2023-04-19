@@ -76,7 +76,7 @@ public class IRC3 extends IRC3Basic  implements InterfaceIRC3{
         TransferAdmin(Context.getOwner(),_address);
     }
 
-    @EventLog
+    @EventLog(indexed=2)
     public void TransferAdmin(Address _oldAmin, Address _newAdmin){}
 
 

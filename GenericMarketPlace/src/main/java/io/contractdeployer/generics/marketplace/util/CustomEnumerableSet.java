@@ -1,6 +1,6 @@
 package io.contractdeployer.generics.marketplace.util;
 
-import io.contractdeployer.generics.marketplace.MarketPlaceException;
+import io.contractdeployer.generics.marketplace.exception.MarketPlaceException;
 import score.*;
 
 public class CustomEnumerableSet<A, V> {

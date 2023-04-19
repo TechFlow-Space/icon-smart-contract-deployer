@@ -1,6 +1,6 @@
 package io.contractdeployer.generics.marketplace.enums;
 
-import io.contractdeployer.generics.marketplace.MarketPlaceException;
+import io.contractdeployer.generics.marketplace.exception.MarketPlaceException;
 import score.UserRevertedException;
 
 public enum ScoreType {

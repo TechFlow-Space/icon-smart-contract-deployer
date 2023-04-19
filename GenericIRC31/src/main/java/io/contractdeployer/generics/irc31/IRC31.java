@@ -86,7 +86,7 @@ public class IRC31 extends IRC31Basic implements InterfaceIRC31{
 
     }
 
-    @EventLog
+    @EventLog(indexed = 2)
     public void TransferAdmin(Address _oldAmin, Address _newAdmin){}
 
     @External

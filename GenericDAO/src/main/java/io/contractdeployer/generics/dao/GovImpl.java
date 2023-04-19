@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class GovImpl {
 
-    public static final String TAG = "Governance"; // TODO : is the tag okay?
+    public static final String TAG = "Governance";
     public static final BigInteger HOUR_IN_SECONDS = BigInteger.valueOf(3600);
     public static final BigInteger DAY_IN_SECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(24));
     public static final BigInteger HOUR_IN_MICROSECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));

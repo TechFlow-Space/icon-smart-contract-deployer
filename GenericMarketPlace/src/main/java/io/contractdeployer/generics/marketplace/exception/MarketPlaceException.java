@@ -1,4 +1,4 @@
-package io.contractdeployer.generics.marketplace;
+package io.contractdeployer.generics.marketplace.exception;
 
 import score.Address;
 

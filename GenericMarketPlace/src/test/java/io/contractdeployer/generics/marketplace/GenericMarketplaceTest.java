@@ -5,6 +5,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import io.contractdeployer.generics.marketplace.db.SaleDB;
+import io.contractdeployer.generics.marketplace.exception.MarketPlaceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -17,7 +18,6 @@ import java.util.List;
 import static io.contractdeployer.generics.marketplace.TestHelper.expectErrorMessage;
 import static io.contractdeployer.generics.marketplace.util.NumUtil.pow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
