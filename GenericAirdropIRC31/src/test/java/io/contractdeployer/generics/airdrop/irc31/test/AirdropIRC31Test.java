@@ -74,9 +74,9 @@ public class AirdropIRC31Test extends TestBase {
         addRecipients(owner);
 
         doReturn(true).when(spyScore).call(boolean.class, testScore.getAddress(),
-                "isApprovedForAll", alice.getAddress());
+                "isApprovedForAll", alice.getAddress(),score.getAddress());
         doReturn(true).when(spyScore).call(boolean.class, dummyScore.getAddress(),
-                "isApprovedForAll", bob.getAddress());
+                "isApprovedForAll", bob.getAddress(),score.getAddress());
 
         doReturn(BigInteger.valueOf(1681_721_966).multiply(BigInteger.valueOf(1000_000))).
                 when(spyScore).now();

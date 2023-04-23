@@ -121,8 +121,7 @@ public class AirdropIRC31 {
     }
 
     protected void checkApproval(Address address, Address owner) {
-
-        boolean approved = call(boolean.class, address, "isApprovedForAll", owner);
+        boolean approved = call(boolean.class, address, "isApprovedForAll", owner,Context.getAddress());
         Context.require(approved, AirdropIRC31Exception.approvalRequiredForAll(owner));
 
     }
