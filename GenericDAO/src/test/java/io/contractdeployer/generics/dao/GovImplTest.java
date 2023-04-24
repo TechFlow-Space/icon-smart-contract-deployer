@@ -30,7 +30,7 @@ public class GovImplTest extends TestBase {
     @BeforeEach
     void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2TestToken.class, ICX.multiply(BigInteger.valueOf(10000)));
-        genericDaoScore = sm.deploy(owner, GovImpl.class," Agora Score");
+        genericDaoScore = sm.deploy(owner, GovImpl.class,"Dao Score");
         spyScore = (GovImpl) spy(genericDaoScore.getInstance());
         genericDaoScore.setInstance(spyScore);
         // set governance token
@@ -42,7 +42,7 @@ public class GovImplTest extends TestBase {
 
     @Test
     void name() {
-        assertEquals(TAG +" Agora Score", genericDaoScore.call("name"));
+        assertEquals(TAG +" Dao Score", genericDaoScore.call("name"));
     }
 
     @Test
@@ -57,6 +57,7 @@ public class GovImplTest extends TestBase {
         doReturn(BigInteger.valueOf(800).multiply(ICX)).when(spyScore).getTokenBalance(any());
         // submit dummy proposal
         long endTime = sm.getBlock().getTimestamp() + 2 * GovImpl.DAY_IN_MICROSECONDS.longValue();
+        doReturn(true).when(spyScore).checkValidTimeStamp(BigInteger.valueOf(endTime));
         genericDaoScore.invoke(owner, "submitProposal", BigInteger.valueOf(endTime), "testIpfsHash");
 
         var pid = (BigInteger) genericDaoScore.call("lastProposalId");

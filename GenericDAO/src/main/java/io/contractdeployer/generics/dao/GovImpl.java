@@ -272,7 +272,7 @@ public class GovImpl {
                 GovernanceException.invalidEndTime());
     }
 
-    private boolean checkValidTimeStamp(BigInteger timestamp) {
+    protected boolean checkValidTimeStamp(BigInteger timestamp) {
         return timestamp.toString().length() == 16;
     }
 
