@@ -1,4 +1,4 @@
-version '0.0.1'
+version '0.1'
 
 dependencies {
     implementation 'com.github.sink772:javaee-tokens:0.6.3'
