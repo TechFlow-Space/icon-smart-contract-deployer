@@ -69,7 +69,7 @@ public class AirdropIRC3 {
 
     @External
     public void airdropToListedUsers(int paymentToProcess){
-        onlyOwner();// reentrancy
+        onlyOwner();
         int totalPayed = getAirdroppedCount();
         int countOfProcess = processedCount.getOrDefault(0);
 

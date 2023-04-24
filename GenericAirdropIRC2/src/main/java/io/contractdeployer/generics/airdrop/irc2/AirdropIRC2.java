@@ -98,7 +98,6 @@ public class AirdropIRC2 {
         for (int i = 0; i < count; i++) {
              UserDetails userDetails = userData.get(i);
 
-//             TODO: check this before call
             BigInteger timestamp = userDetails.timestamp;
             BigInteger currentTime = getBlockTimestamp();
             Context.require(timestamp.compareTo(currentTime) <= 0,
