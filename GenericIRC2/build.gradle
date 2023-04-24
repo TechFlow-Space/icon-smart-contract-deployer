@@ -1,6 +1,4 @@
-group 'io.contractdeployer.generics'
 version '0.1'
-
 
 dependencies {
     implementation 'com.github.sink772:javaee-tokens:0.6.3'
@@ -18,13 +16,7 @@ deployJar {
     endpoints {
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
-//            to = 'cxa191038394e35ca363fd89a61221eebf38e37f4d'
             nid = 0x7
-        }
-        sejong {
-            uri = 'https://sejong.net.solidwallet.io/api/v3'
-            to = 'cxc14fe220574bd3995c331db6f70eb22cc7b5ec50'
-            nid = 0x53
         }
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
@@ -32,6 +24,7 @@ deployJar {
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            to = rootProject.findProperty("contract.IRC2") as String
             nid = 0x2
         }
     }
@@ -39,13 +32,12 @@ deployJar {
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
 
     parameters {
-        arg('_name','MyIRC2')
-        arg('_symbol','IRC2')
-        arg('_decimals','0x12')
-        arg('_minter','')
+        arg('_name',rootProject.findProperty("IRC2.name") as String)
+        arg('_symbol',rootProject.findProperty("IRC2.symbol") as String)
+        arg('_decimals',rootProject.findProperty("IRC2.decimal") as String)
+        arg('_minter',rootProject.findProperty("IRC2.minter") as String)
     }
 }
-
 
 test {
     useJUnitPlatform()

@@ -8,6 +8,8 @@ dependencies {
     implementation 'com.github.sink772:javaee-tokens:0.6.3'
     implementation 'foundation.icon:javaee-scorex:0.5.3'
 
+    testImplementation group: 'org.mockito', name: 'mockito-inline', version: '4.6.1'
+
 }
 
 optimizedJar {
@@ -26,7 +28,7 @@ deployJar {
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
-            to = 'cx520f8db5b626ca05f9ddc55459742073caf12fcd'
+            to = 'cx0cfa80e10229190c93be43a856d578d666e5a2d0'
             nid = 0x2
         }
         sejong {

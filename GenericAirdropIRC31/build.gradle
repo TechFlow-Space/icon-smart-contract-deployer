@@ -1,0 +1,48 @@
+group 'io.contractdeployer.generics'
+version '0.1'
+
+
+dependencies {
+    implementation 'com.github.sink772:javaee-tokens:0.6.3'
+    implementation 'foundation.icon:javaee-scorex:0.5.3'
+}
+
+optimizedJar {
+    mainClassName = 'io.contractdeployer.generics.airdrop.irc31.AirdropIRC31'
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+deployJar {
+    endpoints {
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+//            to='cx50a7c011d5e21058cb7026418a2b9037fad30a02'
+            nid = 0x7
+        }
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+        }
+        mainnet {
+            uri = 'https://ctz.solidwallet.io/api/v3'
+            nid = 0x1
+        }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+//            to='cx35dff7d1d3bfe33e3c68f30296f7892d484cb3ef'
+            nid = 0x2
+        }
+    }
+    keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
+    password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+
+    parameters {
+    }
+}
+
+
+test {
+    useJUnitPlatform()
+}

@@ -1,3 +1,30 @@
 rootProject.name = 'core-contracts'
 include 'GenericIRC3'
+findProject(":GenericIRC3").projectDir = file("GenericIRC3")
 
+include 'GenericAirdropIRC2'
+findProject(":GenericAirdropIRC2").projectDir = file("GenericAirdropIRC2")
+
+include 'GenericAirdropIRC3'
+findProject(":GenericAirdropIRC3").projectDir = file("GenericAirdropIRC3")
+
+include 'GenericAirdropIRC31'
+findProject(":GenericAirdropIRC31").projectDir = file("GenericAirdropIRC31")
+
+include 'GenericDAO'
+findProject(":GenericDAO").projectDir = file("GenericDAO")
+
+include 'GenericIRC2'
+findProject(":GenericIRC2").projectDir = file("GenericIRC2")
+
+include 'GenericIRC31'
+findProject(":GenericIRC31").projectDir = file("GenericIRC31")
+
+include 'GenericMarketPlace'
+findProject(":GenericMarketPlace").projectDir = file("GenericMarketPlace")
+
+include 'GenericNFTAuction'
+findProject(":GenericNFTAuction").projectDir = file("GenericNFTAuction")
+
+include 'TokenFactory'
+findProject(":TokenFactory").projectDir = file("TokenFactory")
