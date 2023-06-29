@@ -3,7 +3,7 @@ version '0.1'
 
 
 dependencies {
-    implementation 'com.github.sink772:javaee-tokens:0.6.3'
+    implementation 'com.github.sink772:javaee-tokens:0.6.4'
     implementation 'foundation.icon:javaee-scorex:0.5.3'
 }
 
